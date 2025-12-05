@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/user.model";
-import { generateToken } from "../utils/token.utils";
+import { generateRefreshToken, generateToken } from "../utils/token.utils";
 export const signupService = async (data: {
   name: string;
   email: string;
@@ -33,6 +33,6 @@ export const loginService = async (email: string, password: string) => {
   if (!isMatch) throw new Error("Invalid email or password");
 
   const token = await generateToken(user);
-
-  return { user, token };
+  const refreshToken = await generateRefreshToken(user);
+  return { user, token, refreshToken };
 };

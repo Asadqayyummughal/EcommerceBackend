@@ -15,7 +15,7 @@ export const authMiddleware = (
     console.log("check token", token);
 
     // No token sent
-    if (!token || !token.startsWith("Bearer ")) {
+    if (!token || !token.startsWith("Bearer")) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized — No token provided",

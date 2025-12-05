@@ -1,11 +1,12 @@
 import jwt from "jsonwebtoken";
 import { IUser } from "../models/user.model";
 
-export const generateToken = async (user: IUser) => {
-  const token = jwt.sign(
-    { id: user._id, email: user.email },
-    process.env.JWT_SECRET || "secret123",
-    { expiresIn: "7d" }
-  );
-  return token;
+export const generateAccessToken = (userId: string) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: "15m" });
+};
+
+export const generateRefreshToken = (userId: string) => {
+  return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET!, {
+    expiresIn: "7d",
+  });
 };
