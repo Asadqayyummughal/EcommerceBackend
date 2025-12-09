@@ -1,34 +1,12 @@
 import { Request, Response } from "express";
-import {
-  getAllUsersService,
-  createUserService,
-} from "../services/user.service";
+import * as userService from "../services/user.service";
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const users = await getAllUsersService();
+    const users = await userService.getAllUsersService();
     res.json({ success: true, users });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
-  }
-};
-
-export const createUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { name, email } = req.body;
-    if (!name || !email) {
-      res
-        .status(400)
-        .json({ success: false, message: "name and email are required" });
-      return;
-    }
-    const user = await createUserService({ name, email } as any);
-    res.status(201).json({ success: true, user });
-  } catch (error) {
-    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -43,5 +21,37 @@ export const getProfile = async (req: Request, res: Response) => {
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const getProfileController = async (req: Request, res: Response) => {
+  try {
+    // Assuming authenticate middleware adds `user` to req
+    const user = await userService.getProfile(req.body.id);
+    res.json(user);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateProfileController = async (req: Request, res: Response) => {
+  try {
+    const user = await userService.updateProfile(req.body._id, req.body);
+    res.json(user);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const changePasswordController = async (req: Request, res: Response) => {
+  try {
+    await userService.changePassword(
+      req.body.id,
+      req.body.oldPassword,
+      req.body.newPassword
+    );
+    res.json({ message: "Password updated successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };

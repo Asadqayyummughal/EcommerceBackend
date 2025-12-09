@@ -7,6 +7,9 @@ export interface IUser extends Document {
   createdAt?: Date;
   updatedAt?: Date;
   refreshTokens: RefreshToken[];
+  // FORGOT PASSWORD
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }
 export interface RefreshToken {
   token: string;
@@ -24,6 +27,9 @@ const userSchema = new mongoose.Schema<IUser>(
         expiresAt: Date,
       },
     ],
+    // FORGOT PASSWORD
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
   },
   { timestamps: true }
 );

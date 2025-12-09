@@ -3,6 +3,9 @@ import {
   loginService,
   signupService,
   refreshTokenService,
+  logoutService,
+  forgotPasswordService,
+  resetPasswordService,
 } from "../services/auth.service";
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -12,9 +15,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ success: false, message: "All fields required" });
       return;
     }
-
     const user = await signupService({ name, email, password });
-
     res.status(201).json({
       success: true,
       message: "User registered successfully",
@@ -50,5 +51,39 @@ export const refreshToken = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     return res.status(401).json({ message: error.message });
+  }
+};
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken } = req.body;
+    await logoutService(refreshToken);
+
+    return res.json({ message: "Logged out successfully" });
+  } catch (error: any) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    await forgotPasswordService(email);
+
+    return res.json({
+      message: "Password reset link sent to your email",
+    });
+  } catch (error: any) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+    await resetPasswordService(token, newPassword);
+    return res.json({ message: "Password reset successful" });
+  } catch (error: any) {
+    return res.status(400).json({ message: error.message });
   }
 };
