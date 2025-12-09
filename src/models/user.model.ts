@@ -6,7 +6,7 @@ export interface IUser extends Document {
   password: string;
   createdAt?: Date;
   updatedAt?: Date;
-  refreshToken: RefreshToken[];
+  refreshTokens: RefreshToken[];
 }
 export interface RefreshToken {
   token: string;
@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema<IUser>(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    refreshToken: [
+    refreshTokens: [
       {
         token: String,
         expiresAt: Date,

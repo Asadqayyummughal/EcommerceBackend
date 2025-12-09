@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
-import { loginService, signupService } from "../services/auth.service";
-
+import {
+  loginService,
+  signupService,
+  refreshTokenService,
+} from "../services/auth.service";
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password } = req.body;
@@ -27,33 +30,25 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
-
-  const user = await User.findOne({ email });
-  if (!user) return res.status(400).json({ message: "Invalid credentials" });
-
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
-
   // tokens
-  const accessToken = generateAccessToken(user._id.toString());
-  const refreshToken = generateRefreshToken(user._id.toString());
-
-  // hash refresh token before storing
-  const hashedRefresh = crypto
-    .createHash("sha256")
-    .update(refreshToken)
-    .digest("hex");
-
-  user.refreshTokens.push({
-    token: hashedRefresh,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  });
-
-  await user.save();
-
+  let { user, accessToken, refreshToken } = await loginService(email, password);
   return res.json({
     accessToken,
     refreshToken,
-    user: { id: user._id, name: user.name, email: user.email },
+    user: user,
   });
+};
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken } = req.body;
+
+    const result = await refreshTokenService(refreshToken);
+
+    return res.json({
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    });
+  } catch (error: any) {
+    return res.status(401).json({ message: error.message });
+  }
 };
