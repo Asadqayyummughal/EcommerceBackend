@@ -26,7 +26,6 @@ export const getProfile = async (req: Request, res: Response) => {
 
 export const getProfileController = async (req: Request, res: Response) => {
   try {
-    // Assuming authenticate middleware adds `user` to req
     const user = await userService.getProfile(req.body.id);
     res.json(user);
   } catch (error: any) {
@@ -36,7 +35,7 @@ export const getProfileController = async (req: Request, res: Response) => {
 
 export const updateProfileController = async (req: Request, res: Response) => {
   try {
-    const user = await userService.updateProfile(req.body._id, req.body);
+    const user = await userService.updateProfile(req.body.id, req.body);
     res.json(user);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -53,5 +52,23 @@ export const changePasswordController = async (req: Request, res: Response) => {
     res.json({ message: "Password updated successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const uploadImageController = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    let id = req.params.id;
+
+    if (!id) return res.status(400).json({ message: "userId missing" });
+    if (id) {
+      const user = await userService.uploadProfileImage(id, req.file.path);
+      res.json({
+        message: "Image updated",
+        image: user.image,
+      });
+    }
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };

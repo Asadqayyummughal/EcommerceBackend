@@ -12,8 +12,6 @@ export const authMiddleware = (
 ) => {
   try {
     let token = req.headers.authorization;
-    console.log("check token", token);
-
     // No token sent
     if (!token || !token.startsWith("Bearer")) {
       return res.status(401).json({
@@ -21,7 +19,6 @@ export const authMiddleware = (
         message: "Unauthorized — No token provided",
       });
     }
-    debugger;
     // Extract token
     token = token.split(" ")[1];
 
