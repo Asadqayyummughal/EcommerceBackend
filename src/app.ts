@@ -2,7 +2,7 @@ import express, { Application } from "express";
 import cors from "cors";
 import userRoutes from "./routes/user.routes";
 import authRoutes from "./routes/auth.routes";
-import { authMiddleware } from "./middlewares/auth.middleware.";
+import productRoutes from "./routes/product.routes";
 
 const app: Application = express();
 
@@ -18,5 +18,6 @@ app.get("/", (req, res) => {
 // IMPORTANT: userRoutes MUST be a Router(), not an object!
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
 
 export default app;
