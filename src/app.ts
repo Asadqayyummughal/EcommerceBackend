@@ -3,6 +3,8 @@ import cors from "cors";
 import userRoutes from "./routes/user.routes";
 import authRoutes from "./routes/auth.routes";
 import productRoutes from "./routes/product.routes";
+import categoryRoutes from "./routes/category.routes";
+import subcategoryRoutes from "./routes/subcategory.routes";
 
 const app: Application = express();
 
@@ -19,5 +21,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/product/categories", categoryRoutes);
+app.use("/api/product/subcategories", subcategoryRoutes);
 
 export default app;
