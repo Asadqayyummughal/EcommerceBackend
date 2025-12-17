@@ -37,8 +37,8 @@ export const loginService = async (email: string, password: string) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error("Invalid email or password");
   // tokens
-  const accessToken = generateAccessToken(user._id.toString());
-  const refreshToken = generateRefreshToken(user._id.toString());
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
   // hash refresh token before storing
   const hashedRefresh = crypto
     .createHash("sha256")
@@ -85,7 +85,7 @@ export const refreshTokenService = async (refreshToken: string) => {
   );
 
   // 5️⃣ Generate new refresh token
-  const newRefreshToken = generateRefreshToken(user._id.toString());
+  const newRefreshToken = generateRefreshToken(user);
   const newHashedRefresh = crypto
     .createHash("sha256")
     .update(newRefreshToken)
@@ -99,7 +99,7 @@ export const refreshTokenService = async (refreshToken: string) => {
   await user.save();
 
   // 6️⃣ Create new access token
-  const newAccessToken = generateAccessToken(user._id.toString());
+  const newAccessToken = generateAccessToken(user);
 
   return {
     accessToken: newAccessToken,

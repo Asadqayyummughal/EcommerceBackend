@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as productControllers from "../controllers/product.controller";
-import { authMiddleware } from "../middlewares/auth.middleware.";
+import { authMiddleware } from "../middlewares/auth.middleware";
 import { roleMiddleware } from "../middlewares/role.middleware";
 import { uploadMiddleware } from "../middlewares/multer";
 import {

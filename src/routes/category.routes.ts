@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from "../middlewares/auth.middleware.";
+import { authMiddleware } from "../middlewares/auth.middleware";
 import { uploadMiddleware } from "../middlewares/multer";
 import { createCategorySchema } from "../validators/category.validators";
 import { validate } from "../middlewares/validate.middleware";

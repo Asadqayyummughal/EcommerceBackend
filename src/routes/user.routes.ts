@@ -6,7 +6,7 @@ import {
   changePasswordController,
   uploadImageController,
 } from "../controllers/user.controllers";
-import { authMiddleware } from "../middlewares/auth.middleware.";
+import { authMiddleware } from "../middlewares/auth.middleware";
 import { uploadProfile } from "../middlewares/upload.middleware";
 
 const router = Router();
