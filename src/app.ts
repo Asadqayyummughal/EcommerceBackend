@@ -6,7 +6,7 @@ import productRoutes from "./routes/product.routes";
 import categoryRoutes from "./routes/category.routes";
 import subcategoryRoutes from "./routes/subcategory.routes";
 import cartRoutes from "./routes/cart.routes";
-
+import checkoutRoutes from "./routes/checkout.routes";
 const app: Application = express();
 
 app.use(cors());
@@ -24,6 +24,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/product/categories", categoryRoutes);
 app.use("/api/product/subcategories", subcategoryRoutes);
-app.use("/api/product/cart", cartRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/checkout", checkoutRoutes);
 
 export default app;

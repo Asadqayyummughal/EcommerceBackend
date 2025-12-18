@@ -11,10 +11,14 @@ import { uploadProfile } from "../middlewares/upload.middleware";
 
 const router = Router();
 
-router.get("/", getUsers);
-router.get("/profile", getProfileController);
-router.post("/updateProfile", updateProfileController);
-router.post("/profile/changePassword", changePasswordController);
+router.get("/", authMiddleware, getUsers);
+router.get("/profile", authMiddleware, getProfileController);
+router.post("/updateProfile", authMiddleware, updateProfileController);
+router.post(
+  "/profile/changePassword",
+  authMiddleware,
+  changePasswordController
+);
 router.post(
   "/upload-image/:id",
   authMiddleware,
