@@ -16,6 +16,7 @@ export const checkoutService = async (
     if (!cart || cart.items.length === 0) throw new Error("Cart is empty"); //validate cart
     const orderItems = [];
     let subtotal = 0;
+
     for (const item of cart.items) {
       //validate stock
       const product = await Product.findById(item.product).session(session);
@@ -25,6 +26,8 @@ export const checkoutService = async (
         const variant = product.variants?.find(
           (v) => v.sku === item.variantSku
         );
+        console.log("check varient ", variant);
+
         if (variant && variant.stock && variant.stock > item.quantity) {
           price = variant.price ?? price;
           variant.stock -= item.quantity;

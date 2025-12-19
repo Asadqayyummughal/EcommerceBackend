@@ -81,6 +81,7 @@ export const removeCartItemService = async (
   cart.items = cart.items.filter(
     (i) => !(i.product.toString() === productId && i.variantSku === variantSku)
   );
+  console.log("check items===============>", cart);
 
   cart.set(calculateCartTotals(cart.items));
   await cart.save();
