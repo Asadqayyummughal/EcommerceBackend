@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { AuthUser } from "../types/express";
 
 interface JwtPayload {
   email: string | undefined;
@@ -27,11 +28,14 @@ export const authMiddleware = (
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET as string
-    ) as JwtPayload;
+    ) as AuthUser;
     // attach user id to request object
+
     req.user = {
       id: decoded.id,
+      name: decoded.name,
       email: decoded.email,
+      phone: decoded.phone,
     };
     next();
   } catch (err) {

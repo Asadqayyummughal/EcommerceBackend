@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import Cart from "../models/cart.model";
 import Product from "../models/product.model";
 import { calculateCartTotals } from "../utils/cart.utils";
@@ -23,10 +23,15 @@ export const addToCartService = async (
   if (!product || !product.isActive) {
     throw new Error("Product not available");
   }
+
   let price = product.salePrice ?? product.price;
   if (variantSku) {
     const variant = product.variants?.find((v) => v.sku === variantSku);
     if (!variant) throw new Error("Variant not found");
+    if (variant.stock && variant.stock < quantity)
+      throw new Error(
+        `Less stock available we have just ${variant.stock} ${product.title} available`
+      );
     price = variant.price ?? price;
   }
 
@@ -39,7 +44,7 @@ export const addToCartService = async (
     (i) => i.product.toString() === productId && i.variantSku === variantSku
   );
   if (existingItem) {
-    existingItem.quantity += quantity;
+    existingItem.quantity += Number(quantity);
   } else {
     cart.items.push({ product: productId as any, quantity, price, variantSku });
   }
@@ -75,15 +80,45 @@ export const removeCartItemService = async (
   productId: string,
   variantSku?: string
 ) => {
+  // Validate ObjectId format early
+  if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(productId)) {
+    throw new Error("Invalid user ID or product ID");
+  }
+
   const cart = await Cart.findOne({ user: userId });
-  if (!cart) throw new Error("Cart not found");
+  if (!cart) {
+    throw new Error("Cart not found");
+  }
 
-  cart.items = cart.items.filter(
-    (i) => !(i.product.toString() === productId && i.variantSku === variantSku)
-  );
-  console.log("check items===============>", cart);
+  // Find the index of the item to remove
+  const itemIndex = cart.items.findIndex((item) => {
+    const matchesProduct = item.product.toString() === productId;
 
+    // If variantSku is provided, it must match exactly
+    // If not provided, we just match by product (remove all variants of that product)
+    const matchesVariant = variantSku ? item.variantSku === variantSku : true;
+
+    return matchesProduct && matchesVariant;
+  });
+
+  // If no matching item found, throw a clear error
+  if (itemIndex === -1) {
+    if (variantSku) {
+      throw new Error(
+        `Item with product ID "${productId}" and variant SKU "${variantSku}" not found in cart`
+      );
+    } else {
+      throw new Error(`Product with ID "${productId}" not found in cart`);
+    }
+  }
+
+  // Remove the item
+  cart.items.splice(itemIndex, 1);
+
+  // Recalculate totals
   cart.set(calculateCartTotals(cart.items));
+
+  // Save and return updated cart
   await cart.save();
   return cart;
 };

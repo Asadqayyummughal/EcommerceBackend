@@ -1,0 +1,21 @@
+import { Router } from "express";
+import * as orderController from "../controllers/order.controller";
+import { authMiddleware } from "../middlewares/auth.middleware";
+import { roleMiddleware } from "../middlewares/role.middleware";
+
+const router = Router();
+router.post("/checkout", authMiddleware, orderController.checkout);
+// User
+router.get("/", authMiddleware, orderController.getMyOrders);
+router.get("/:id", authMiddleware, orderController.getOrderById);
+router.put("/:id/cancel", authMiddleware, orderController.cancelOrder);
+
+// Admin
+router.put(
+  "/:id/status",
+  authMiddleware,
+  //   roleMiddleware(["admin"]),
+  orderController.updateOrderStatus
+);
+
+export default router;

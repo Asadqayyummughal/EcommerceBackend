@@ -1,15 +1,15 @@
 import { Types } from "mongoose";
-
+import { IUser } from "../models/user.model";
+export interface AuthUser {
+  id: string; // or Types.ObjectId if you use ObjectId in JWT
+  name: string;
+  email: string;
+  phone: string;
+}
 declare global {
   namespace Express {
-    interface User {
-      id: string; // or Types.ObjectId
-      email?: string;
-      role?: string;
-    }
-
     interface Request {
-      user: User;
+      user: AuthUser;
     }
   }
 }

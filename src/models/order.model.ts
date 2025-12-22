@@ -8,7 +8,13 @@ export interface IOrderItem {
   quantity: number;
   subtotal: number;
 }
-
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "shipped"
+  | "cancelled"
+  | "delivered";
+export type PaymentMethod = "cod" | "stripe" | "paypal";
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId;
   items: IOrderItem[];
@@ -17,8 +23,8 @@ export interface IOrder extends Document {
   tax: number;
   shipping: number;
   totalAmount: number;
-  status: "pending" | "paid" | "shipped" | "cancelled";
-  paymentMethod: "cod" | "stripe" | "paypal";
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
   paymentStatus: "pending" | "paid" | "failed";
   shippingAddress: {
     name: string;

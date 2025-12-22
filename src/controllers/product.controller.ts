@@ -18,8 +18,6 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const getProduct = async (req: Request, res: Response) => {
   try {
-    console.log("getById controller get Calledf===>", req.params.id);
-
     const id = req.params.id;
     const product = await productService.getProductByIdService(id);
     return res.json({ success: true, product });
