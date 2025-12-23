@@ -23,7 +23,6 @@ export const createStripePaymentIntent = async (orderId: string) => {
       userId: order.user.toString(),
     },
   });
-  console.log("checkout paymentIntend===================>", paymentIntent.id);
   order.stripePaymentIntentId = paymentIntent.id;
   await order.save();
 
@@ -37,8 +36,11 @@ export const confirmPayment = async (
   payment_method: any
 ) => {
   try {
+    // const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
+    //   payment_method: payment_method,
+    // });
     const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
-      payment_method: payment_method,
+      payment_method: "pm_card_visa", // This simulates 4242 4242 4242 4242 (successful charge)
     });
 
     if (paymentIntent.status === "succeeded") {
