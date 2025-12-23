@@ -25,6 +25,8 @@ export interface IOrder extends Document {
   totalAmount: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
+  stripePaymentIntentId: string;
+  inventoryRestored: boolean;
   paymentStatus: "pending" | "paid" | "failed";
   shippingAddress: {
     name: string;
@@ -73,6 +75,8 @@ const OrderSchema = new Schema<IOrder>(
       country: String,
       zip: String,
     },
+    stripePaymentIntentId: String,
+    inventoryRestored: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
