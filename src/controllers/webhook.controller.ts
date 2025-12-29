@@ -20,7 +20,6 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   } catch (err) {
     return res.status(400).send(`Webhook Error`);
   }
-
   const session = await mongoose.startSession();
   session.startTransaction();
 

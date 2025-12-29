@@ -93,7 +93,6 @@ export const removeCartItemService = async (
   // Find the index of the item to remove
   const itemIndex = cart.items.findIndex((item) => {
     const matchesProduct = item.product.toString() === productId;
-
     // If variantSku is provided, it must match exactly
     // If not provided, we just match by product (remove all variants of that product)
     const matchesVariant = variantSku ? item.variantSku === variantSku : true;
