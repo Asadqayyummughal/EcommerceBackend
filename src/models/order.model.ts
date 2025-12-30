@@ -27,7 +27,7 @@ export interface IOrder extends Document {
   paymentMethod: PaymentMethod;
   stripePaymentIntentId: string;
   inventoryRestored: boolean;
-  paymentStatus: "pending" | "paid" | "failed";
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
   shippingAddress: {
     name: string;
     phone: string;
@@ -64,7 +64,7 @@ const OrderSchema = new Schema<IOrder>(
     paymentMethod: String,
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "failed"],
+      enum: ["pending", "paid", "failed", "refunded"],
       default: "pending",
     },
     shippingAddress: {
