@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { restoreInventory } from "./inventory.service";
 
 import { AuthUser } from "../types/express";
+import { refundStripePayment } from "./refund-stripe.service";
 export const checkoutOreder = async (
   userId: string,
   payload: {
@@ -118,25 +119,27 @@ export const cancelOrder = async (userId: string, orderId: string) => {
   try {
     const order = await Order.findById(orderId).session(session);
     if (!order) throw new Error("Order not found");
-
     // 🔐 Ownership check
     if (order.user.toString() !== userId) throw new Error("Unauthorized");
-
     // 🚫 Prevent invalid cancellations
     if (["shipped", "delivered"].includes(order.status)) {
-      throw new Error("Order cannot be cancelled");
+      throw new Error("Shipped orders cannot be cancelled");
     }
-
     if (order.status === "cancelled") {
       throw new Error("Order already cancelled");
     }
+    // 🔁 Refund if paid
+    if (order.paymentStatus === "paid") {
+      let refundRes = await refundStripePayment(order.stripePaymentIntentId);
+      console.log("refundRes==>", refundRes);
+      debugger;
 
+      order.paymentStatus = "refunded";
+    }
     // 🔁 Restore inventory ONLY once
     await restoreInventory(order, session);
-
     order.status = "cancelled";
     await order.save({ session });
-
     await session.commitTransaction();
     session.endSession();
 

@@ -4,7 +4,6 @@ import Order from "../models/order.model";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
 });
-
 export const createStripePaymentIntent = async (orderId: string) => {
   const order = await Order.findById(orderId);
   if (!order) throw new Error("Order not found");

@@ -44,6 +44,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
       const order = await Order.findOne({
         stripePaymentIntentId: intent.id,
       }).session(session);
+      console.log("check event====>", event);
 
       if (order && !order.inventoryRestored) {
         await restoreInventory(order, session);

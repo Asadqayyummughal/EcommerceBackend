@@ -10,7 +10,7 @@ import orderRoutes from "./routes/order.routes";
 import paymentRoutes from "./routes/payment.routes";
 import webhookRoutes from "./routes/webhook.routes";
 const app: Application = express();
-app.use("/api/webhook", webhookRoutes);
+
 app.use(cors());
 app.use(express.json());
 
@@ -29,5 +29,7 @@ app.use("/api/product/subcategories", subcategoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/payments/stripe", paymentRoutes);
+// webhook routes
+app.use("/api/webhook", webhookRoutes);
 
 export default app;
