@@ -115,7 +115,6 @@ export const getOrderById = async (user: AuthUser, orderId: string) => {
 export const cancelOrder = async (userId: string, orderId: string) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-
   try {
     const order = await Order.findById(orderId).session(session);
     if (!order) throw new Error("Order not found");

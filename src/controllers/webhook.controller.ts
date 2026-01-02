@@ -22,7 +22,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   }
   const session = await mongoose.startSession();
   session.startTransaction();
-
+  console.log("check evnt.tupe=========>", event.type);
   try {
     if (event.type === "payment_intent.succeeded") {
       const intent = event.data.object as Stripe.PaymentIntent;
@@ -40,11 +40,11 @@ export const stripeWebhook = async (req: Request, res: Response) => {
 
     if (event.type === "payment_intent.payment_failed") {
       const intent = event.data.object as Stripe.PaymentIntent;
-
       const order = await Order.findOne({
         stripePaymentIntentId: intent.id,
       }).session(session);
       console.log("check event====>", event);
+      console.log("check intent==========>", intent);
 
       if (order && !order.inventoryRestored) {
         await restoreInventory(order, session);
