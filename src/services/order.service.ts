@@ -129,9 +129,10 @@ export const cancelOrder = async (userId: string, orderId: string) => {
     }
     // 🔁 Refund if paid
     if (order.paymentStatus === "paid") {
-      let refundRes = await refundStripePayment(order.stripePaymentIntentId);
-      console.log("refundRes==>", refundRes);
-      debugger;
+      await refundStripePayment(
+        order.stripePaymentIntentId,
+        order._id.toString()
+      );
 
       order.paymentStatus = "refunded";
     }

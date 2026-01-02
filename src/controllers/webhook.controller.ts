@@ -22,7 +22,6 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   }
   const session = await mongoose.startSession();
   session.startTransaction();
-  console.log("check evnt.tupe=========>", event.type);
   try {
     if (event.type === "payment_intent.succeeded") {
       const intent = event.data.object as Stripe.PaymentIntent;
