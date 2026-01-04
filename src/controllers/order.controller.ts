@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import * as orderService from "../services/order.service";
 export const checkout = async (req: Request, res: Response) => {
-  const order = await orderService.checkoutOreder(req.user.id, req.body);
+  const order = await orderService.checkoutOrder(req.user.id, req.body);
   res.status(201).json(order);
 };
 export const getMyOrders = async (req: Request, res: Response) => {
-  const orders = await orderService.getUserOrders(req.user.id);
-  res.json(orders);
+  const order = await orderService.getOrderTracking(req.params.id, req.user.id);
+  res.json(order);
 };
 
 export const getOrderById = async (req: Request, res: Response) => {
@@ -22,5 +22,22 @@ export const cancelOrder = async (req: Request, res: Response) => {
 export const updateOrderStatus = async (req: Request, res: Response) => {
   const { status } = req.body;
   const order = await orderService.updateOrderStatus(req.params.id, status);
+  res.json(order);
+};
+export const shipOrder = async (req: Request, res: Response) => {
+  const order = await orderService.shipOrder(
+    req.params.id,
+    req.body,
+    req.user.id
+  );
+  res.json(order);
+};
+export const deliverOrder = async (req: Request, res: Response) => {
+  const order = await orderService.deliverOrder(req.params.id, req.user.id);
+  res.json(order);
+};
+
+export const trackOrder = async (req: Request, res: Response) => {
+  const order = await orderService.getOrderTracking(req.params.id, req.user.id);
   res.json(order);
 };

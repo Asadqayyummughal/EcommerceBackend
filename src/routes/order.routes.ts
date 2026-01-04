@@ -9,6 +9,7 @@ router.post("/checkout", authMiddleware, orderController.checkout);
 router.get("/", authMiddleware, orderController.getMyOrders);
 router.get("/:id", authMiddleware, orderController.getOrderById);
 router.put("/:id/cancel", authMiddleware, orderController.cancelOrder);
+router.get("/:id/tracking", authMiddleware, orderController.getMyOrders);
 
 // Admin
 router.put(
@@ -17,5 +18,16 @@ router.put(
   //   roleMiddleware(["admin"]),
   orderController.updateOrderStatus
 );
-
+router.post(
+  "/:id/ship",
+  authMiddleware,
+  //roleMiddleware(["admin"]),
+  orderController.shipOrder
+);
+router.post(
+  "/:id/deliver",
+  authMiddleware,
+  //roleMiddleware(["admin"]),
+  orderController.deliverOrder
+);
 export default router;

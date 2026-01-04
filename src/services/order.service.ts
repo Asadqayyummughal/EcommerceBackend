@@ -2,11 +2,22 @@ import Cart from "../models/cart.model";
 import Product from "../models/product.model";
 import Order, { OrderStatus } from "../models/order.model";
 import mongoose from "mongoose";
-import { restoreInventory } from "./inventory.service";
-
 import { AuthUser } from "../types/express";
 import { refundStripePayment } from "./refund-stripe.service";
-export const checkoutOreder = async (
+import { restoreInventory } from "../utils/restore-inventory";
+import Shipment from "../models/shimpment.model";
+const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending: ["paid", "cancelled"],
+  paid: ["processing", "cancelled"],
+  processing: ["shipped", "cancelled"],
+  shipped: ["delivered"],
+  delivered: [],
+  cancelled: [],
+  failed: [],
+  expired: [],
+};
+
+export const checkoutOrder = async (
   userId: string,
   payload: {
     paymentMethod: "cod" | "stripe" | "paypal";
@@ -25,7 +36,6 @@ export const checkoutOreder = async (
       const product = await Product.findById(item.product).session(session);
       if (!product || !product.isActive) throw new Error("Product unavailable");
       let price = product.salePrice ?? product.price;
-
       if (item.variantSku) {
         const variant = product.variants?.find(
           (v) => v.sku === item.variantSku
@@ -41,12 +51,9 @@ export const checkoutOreder = async (
           throw new Error("Product out of stock");
         product.stock -= item.quantity;
       }
-
       await product.save({ session });
-
       const itemSubtotal = price * item.quantity;
       subtotal += itemSubtotal;
-
       orderItems.push({
         product: product._id,
         variantSku: item.variantSku,
@@ -60,7 +67,6 @@ export const checkoutOreder = async (
     const tax = subtotal * 0.1; //lock price
     const shipping = subtotal > 100 ? 0 : 10;
     const totalAmount = subtotal + tax + shipping;
-
     const order = await Order.create(
       //create order
       [
@@ -78,16 +84,13 @@ export const checkoutOreder = async (
       ],
       { session }
     );
-
     // 🔥 Clear cart
     cart.items = [];
     cart.totalItems = 0;
     cart.totalPrice = 0;
     await cart.save({ session });
-
     await session.commitTransaction();
     session.endSession();
-
     return order[0];
   } catch (error) {
     await session.abortTransaction();
@@ -162,13 +165,17 @@ export const updateOrderStatus = async (
     const order = await Order.findById(orderId).session(session);
     if (!order) throw new Error("Order not found");
 
-    // 🚫 Prevent invalid transitions
-    if (order.status === "shipped" || order.status === "delivered") {
-      throw new Error("Order cannot be modified");
+    const allowedNextStatuses =
+      ALLOWED_TRANSITIONS[order.status as OrderStatus] || [];
+
+    if (!allowedNextStatuses.includes(newStatus)) {
+      throw new Error(
+        `Invalid status transition: ${order.status} → ${newStatus}`
+      );
     }
 
-    // 🔁 Restore stock ONLY if transitioning to a failure state
-    const restoreStates = ["cancelled", "failed", "expired"];
+    // 🔁 Restore inventory ONLY on cancellation-like states
+    const restoreStates: OrderStatus[] = ["cancelled", "failed", "expired"];
 
     if (
       restoreStates.includes(newStatus) &&
@@ -184,6 +191,114 @@ export const updateOrderStatus = async (
     session.endSession();
 
     return order;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+export const shipOrder = async (
+  orderId: string,
+  payload: { carrier: string; trackingNumber: string },
+  adminId: string
+) => {
+  const order = await Order.findById(orderId);
+  if (!order) throw new Error("Order not found");
+  if (order.status !== "processing") {
+    throw new Error("Order not ready for shipment");
+  }
+  order.status = "shipped";
+  order.shipment = {
+    carrier: payload.carrier,
+    trackingNumber: payload.trackingNumber,
+    shippedAt: new Date(),
+  };
+
+  order.orderEvents.push({
+    status: "shipped",
+    message: "Order shipped",
+    createdAt: new Date(),
+    createdBy: adminId,
+  });
+
+  await order.save();
+  return order;
+};
+
+export const deliverOrder = async (orderId: string, adminId: string) => {
+  const order = await Order.findById(orderId);
+  if (!order) throw new Error("Order not found");
+
+  if (order.status !== "shipped") {
+    throw new Error("Order not shipped yet");
+  }
+
+  order.status = "delivered";
+  order.shipment.deliveredAt = new Date();
+
+  order.orderEvents.push({
+    status: "delivered",
+    message: "Order delivered successfully",
+    createdAt: new Date(),
+    createdBy: adminId,
+  });
+
+  await order.save();
+  return order;
+};
+
+export const getOrderTracking = async (orderId: string, userId: string) => {
+  const order = await Order.findOne({
+    _id: orderId,
+    user: userId,
+  }).select("status shipment orderEvents");
+  if (!order) throw new Error("Order not found");
+  return order;
+};
+// create shipment
+export const createShipmentService = async (
+  orderId: string,
+  payload: {
+    carrier: string;
+    trackingNumber: string;
+    metadata?: any;
+  }
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const order = await Order.findById(orderId).session(session);
+    if (!order) throw new Error("Order not found");
+
+    if (order.status !== "processing") {
+      throw new Error("Order is not ready for shipment");
+    }
+
+    const shipment = await Shipment.create(
+      [
+        {
+          order: order._id,
+          carrier: payload.carrier,
+          trackingNumber: payload.trackingNumber,
+          status: "picked",
+          shippedAt: new Date(),
+          metadata: payload.metadata,
+        },
+      ],
+      { session }
+    );
+
+    order.shipments.push(shipment[0]._id);
+    order.status = "shipped";
+
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return shipment[0];
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

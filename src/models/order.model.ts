@@ -8,12 +8,29 @@ export interface IOrderItem {
   quantity: number;
   subtotal: number;
 }
+export interface IShipment {
+  carrier: string;
+  trackingNumber: string;
+  shippedAt: Date;
+  deliveredAt?: Date;
+}
+export interface IOrderEvent {
+  status: string;
+  message: string;
+  createdAt: Date;
+  createdBy: string;
+}
+
 export type OrderStatus =
   | "pending"
   | "paid"
+  | "processing"
   | "shipped"
+  | "delivered"
   | "cancelled"
-  | "delivered";
+  | "expired"
+  | "failed";
+
 export type PaymentMethod = "cod" | "stripe" | "paypal";
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId;
@@ -36,6 +53,8 @@ export interface IOrder extends Document {
     country: string;
     zip: string;
   };
+  shipments: IShipment[];
+  orderEvents: IOrderEvent[];
 }
 
 const OrderSchema = new Schema<IOrder>(
@@ -58,7 +77,14 @@ const OrderSchema = new Schema<IOrder>(
     totalAmount: Number,
     status: {
       type: String,
-      enum: ["pending", "paid", "shipped", "cancelled"],
+      enum: [
+        "pending",
+        "processing",
+        "paid",
+        "shipped",
+        "cancelled",
+        "delivered",
+      ],
       default: "pending",
     },
     paymentMethod: String,
@@ -75,6 +101,20 @@ const OrderSchema = new Schema<IOrder>(
       country: String,
       zip: String,
     },
+    shipment: {
+      carrier: { type: String },
+      trackingNumber: { type: String },
+      shippedAt: { type: Date },
+      deliveredAt: { type: Date },
+    },
+    orderEvents: [
+      {
+        status: String,
+        message: String,
+        createdAt: { type: Date, default: Date.now },
+        createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+      },
+    ],
     stripePaymentIntentId: String,
     inventoryRestored: { type: Boolean, default: false },
   },

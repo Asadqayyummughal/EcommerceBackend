@@ -1,8 +1,9 @@
 import Stripe from "stripe";
 import Order from "../models/order.model";
 import mongoose from "mongoose";
-import { restoreInventory } from "../services/inventory.service";
+
 import { Request, Response } from "express";
+import { restoreInventory } from "../utils/restore-inventory";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
