@@ -53,7 +53,7 @@ export interface IOrder extends Document {
     country: string;
     zip: string;
   };
-  shipments: IShipment[];
+  shipment: IShipment;
   orderEvents: IOrderEvent[];
 }
 

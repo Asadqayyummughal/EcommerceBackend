@@ -257,51 +257,71 @@ export const getOrderTracking = async (orderId: string, userId: string) => {
   return order;
 };
 // create shipment
-export const createShipmentService = async (
-  orderId: string,
-  payload: {
-    carrier: string;
-    trackingNumber: string;
-    metadata?: any;
-  }
-) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+// export const createShipmentService = async (
+//   orderId: string,
+//   payload: {
+//     carrier: string;
+//     trackingNumber: string;
+//     metadata?: any;
+//   }
+// ) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
 
-  try {
-    const order = await Order.findById(orderId).session(session);
-    if (!order) throw new Error("Order not found");
+//   try {
+//     const order = await Order.findById(orderId).session(session);
+//     if (!order) throw new Error("Order not found");
 
-    if (order.status !== "processing") {
-      throw new Error("Order is not ready for shipment");
-    }
+//     if (order.status !== "processing") {
+//       throw new Error("Order is not ready for shipment");
+//     }
 
-    const shipment = await Shipment.create(
-      [
-        {
-          order: order._id,
-          carrier: payload.carrier,
-          trackingNumber: payload.trackingNumber,
-          status: "picked",
-          shippedAt: new Date(),
-          metadata: payload.metadata,
-        },
-      ],
-      { session }
-    );
+//     const shipment = await Shipment.create(
+//       [
+//         {
+//           order: order._id,
+//           carrier: payload.carrier,
+//           trackingNumber: payload.trackingNumber,
+//           status: "picked",
+//           shippedAt: new Date(),
+//           metadata: payload.metadata,
+//         },
+//       ],
+//       { session }
+//     );
 
-    order.shipments.push(shipment[0]._id);
-    order.status = "shipped";
+//     order.shipments.push(shipment[0]._id);
+//     order.status = "shipped";
 
-    await order.save({ session });
+//     await order.save({ session });
 
-    await session.commitTransaction();
-    session.endSession();
+//     await session.commitTransaction();
+//     session.endSession();
 
-    return shipment[0];
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    throw error;
-  }
-};
+//     return shipment[0];
+//   } catch (error) {
+//     await session.abortTransaction();
+//     session.endSession();
+//     throw error;
+//   }
+// };
+// export const updateShipmentStatus = async (
+//   shipmentId: string,
+//   status: ShipmentStatus
+// ) => {
+//   const shipment = await Shipment.findById(shipmentId);
+//   if (!shipment) throw new Error("Shipment not found");
+
+//   shipment.status = status;
+
+//   if (status === "delivered") {
+//     shipment.deliveredAt = new Date();
+
+//     await Order.findByIdAndUpdate(shipment.order, {
+//       status: "delivered",
+//     });
+//   }
+
+//   await shipment.save();
+//   return shipment;
+// };
