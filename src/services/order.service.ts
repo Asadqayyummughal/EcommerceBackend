@@ -5,7 +5,8 @@ import mongoose from "mongoose";
 import { AuthUser } from "../types/express";
 import { refundStripePayment } from "./refund-stripe.service";
 import { restoreInventory } from "../utils/restore-inventory";
-import Shipment from "../models/shimpment.model";
+import { appEventEmitter } from "../events/appEvents";
+
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ["paid", "cancelled"],
   paid: ["processing", "cancelled"],
@@ -156,7 +157,8 @@ export const cancelOrder = async (userId: string, orderId: string) => {
 
 export const updateOrderStatus = async (
   orderId: string,
-  newStatus: OrderStatus
+  newStatus: OrderStatus,
+  userId: string
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -185,11 +187,16 @@ export const updateOrderStatus = async (
     }
 
     order.status = newStatus;
+
     await order.save({ session });
 
     await session.commitTransaction();
     session.endSession();
-
+    appEventEmitter.emit("order.status.changed", {
+      orderId,
+      newStatus,
+      userId,
+    });
     return order;
   } catch (error) {
     await session.abortTransaction();

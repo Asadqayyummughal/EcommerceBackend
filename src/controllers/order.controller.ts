@@ -5,7 +5,7 @@ export const checkout = async (req: Request, res: Response) => {
   res.status(201).json(order);
 };
 export const getMyOrders = async (req: Request, res: Response) => {
-  const order = await orderService.getOrderTracking(req.params.id, req.user.id);
+  const order = await orderService.getUserOrders(req.user.id);
   res.json(order);
 };
 
@@ -21,7 +21,11 @@ export const cancelOrder = async (req: Request, res: Response) => {
 
 export const updateOrderStatus = async (req: Request, res: Response) => {
   const { status } = req.body;
-  const order = await orderService.updateOrderStatus(req.params.id, status);
+  const order = await orderService.updateOrderStatus(
+    req.params.id,
+    status,
+    req.user.id
+  );
   res.json(order);
 };
 export const shipOrder = async (req: Request, res: Response) => {
