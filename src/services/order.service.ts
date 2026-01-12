@@ -8,6 +8,8 @@ import { restoreInventory } from "../utils/restore-inventory";
 import { appEventEmitter } from "../events/appEvents";
 import { validateCoupon } from "./coupon.service";
 import { getEligibleItems } from "./couponEligibility";
+import { calculateDiscount } from "./couponCalculator";
+import { log } from "console";
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ["paid", "cancelled"],
@@ -98,16 +100,13 @@ export const checkoutOrder = async (
       ? await validateCoupon(payload.couponCode, cart, userId)
       : null;
     let discountAmount = 0;
-    if (coupon) {
-      const eligibleItems = getEligibleItems(orderItems, coupon);
-
-      if (eligibleItems.length === 0) throw new Error("Coupon not applicable");
-
-      const discountData = calculateDiscount(coupon, eligibleItems);
-      discountAmount = discountData.discount;
-
-      totalAmount -= discountAmount;
-    }
+    // if (coupon) {
+    //   const eligibleItems = getEligibleItems(orderItems, coupon);
+    //   if (eligibleItems.length === 0) throw new Error("Coupon not applicable");
+    //   const discountData = calculateDiscount(coupon, eligibleItems);
+    //   discountAmount = discountData.discount;
+    //   totalAmount -= discountAmount;
+    // }
 
     session.endSession();
     return order[0];

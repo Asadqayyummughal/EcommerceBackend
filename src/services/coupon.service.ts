@@ -1,4 +1,12 @@
-export const validateCoupon = async (code: string, cart, userId: string) => {
+import { ICart } from "../models/cart.model";
+import { Coupon } from "../models/coupon.model";
+import { CouponUsage } from "../models/couponUsage.model";
+
+export const validateCoupon = async (
+  code: string,
+  cart: ICart,
+  userId: string
+) => {
   const coupon = await Coupon.findOne({
     code,
     isActive: true,
@@ -17,7 +25,7 @@ export const validateCoupon = async (code: string, cart, userId: string) => {
     coupon: coupon._id,
     user: userId,
   });
-
+  debugger;
   if (coupon.perUserLimit && userUsage >= coupon.perUserLimit)
     throw new Error("Coupon already used");
 
