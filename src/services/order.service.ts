@@ -6,6 +6,8 @@ import { AuthUser } from "../types/express";
 import { refundStripePayment } from "./refund-stripe.service";
 import { restoreInventory } from "../utils/restore-inventory";
 import { appEventEmitter } from "../events/appEvents";
+import { validateCoupon } from "./coupon.service";
+import { getEligibleItems } from "./couponEligibility";
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ["paid", "cancelled"],
@@ -23,6 +25,7 @@ export const checkoutOrder = async (
   payload: {
     paymentMethod: "cod" | "stripe" | "paypal";
     shippingAddress: any;
+    couponCode: string;
   }
 ) => {
   const session = await mongoose.startSession();
@@ -90,6 +93,22 @@ export const checkoutOrder = async (
     cart.totalPrice = 0;
     await cart.save({ session });
     await session.commitTransaction();
+    //coupon logic
+    const coupon = payload.couponCode
+      ? await validateCoupon(payload.couponCode, cart, userId)
+      : null;
+    let discountAmount = 0;
+    if (coupon) {
+      const eligibleItems = getEligibleItems(orderItems, coupon);
+
+      if (eligibleItems.length === 0) throw new Error("Coupon not applicable");
+
+      const discountData = calculateDiscount(coupon, eligibleItems);
+      discountAmount = discountData.discount;
+
+      totalAmount -= discountAmount;
+    }
+
     session.endSession();
     return order[0];
   } catch (error) {

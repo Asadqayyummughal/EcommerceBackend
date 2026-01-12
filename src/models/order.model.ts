@@ -20,7 +20,10 @@ export interface IOrderEvent {
   createdAt: Date;
   createdBy: string;
 }
-
+export interface ICoupon {
+  code: string;
+  discountAmount: number;
+}
 export type OrderStatus =
   | "pending"
   | "paid"
@@ -55,6 +58,7 @@ export interface IOrder extends Document {
   };
   shipment: IShipment;
   orderEvents: IOrderEvent[];
+  coupon: ICoupon;
 }
 
 const OrderSchema = new Schema<IOrder>(
@@ -117,6 +121,10 @@ const OrderSchema = new Schema<IOrder>(
     ],
     stripePaymentIntentId: String,
     inventoryRestored: { type: Boolean, default: false },
+    coupon: {
+      code: String,
+      discountAmount: Number,
+    },
   },
   { timestamps: true }
 );
