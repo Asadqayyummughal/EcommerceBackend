@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 
 import { Request, Response } from "express";
 import { restoreInventory } from "../utils/restore-inventory";
+import { appEventEmitter } from "../events/appEvents";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
@@ -26,18 +27,21 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   try {
     if (event.type === "payment_intent.succeeded") {
       const intent = event.data.object as Stripe.PaymentIntent;
-
       const order = await Order.findOne({
         stripePaymentIntentId: intent.id,
       }).session(session);
-
       if (order && order.paymentStatus !== "paid") {
         order.paymentStatus = "paid";
         order.status = "paid";
+        let orderId = order._id;
+        let userId = order.user;
         await order.save({ session });
+        appEventEmitter.emit("order.placed", {
+          orderId,
+          userId,
+        });
       }
     }
-
     if (event.type === "payment_intent.payment_failed") {
       const intent = event.data.object as Stripe.PaymentIntent;
       const order = await Order.findOne({
@@ -51,10 +55,8 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         await order.save({ session });
       }
     }
-
     await session.commitTransaction();
     session.endSession();
-
     res.json({ received: true });
   } catch (error) {
     await session.abortTransaction();

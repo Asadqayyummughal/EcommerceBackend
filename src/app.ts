@@ -11,15 +11,15 @@ import paymentRoutes from "./routes/payment.routes";
 import webhookRoutes from "./routes/webhook.routes";
 import dashboardRoutes from "./admin/routes/dashboard.routes";
 
-//events
-import "../src/events/listeners";
 const app: Application = express();
 // webhook routes
 app.use("/api/webhook", webhookRoutes);
 app.use(cors());
 app.use(express.json());
-
 app.use("/uploads", express.static("uploads"));
+
+//events
+import "../src/events/listeners";
 
 app.get("/", (req, res) => {
   res.send("API running...");

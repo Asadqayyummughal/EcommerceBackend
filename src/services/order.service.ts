@@ -64,7 +64,6 @@ export const checkoutOrder = async (
         subtotal: itemSubtotal,
       });
     }
-
     const tax = subtotal * 0.1; //lock price
     const shipping = subtotal > 100 ? 0 : 10;
     const totalAmount = subtotal + tax + shipping;
@@ -192,6 +191,7 @@ export const updateOrderStatus = async (
 
     await session.commitTransaction();
     session.endSession();
+
     appEventEmitter.emit("order.status.changed", {
       orderId,
       newStatus,
