@@ -1,9 +1,12 @@
-export const calculateDiscount = (coupon, eligibleItems) => {
+import { ICartItem } from "../models/cart.model";
+import { ICoupon } from "../models/coupon.model";
+
+export const calculateDiscount = (coupon: ICoupon, eligibleItems: any[]) => {
+  debugger;
   const eligibleSubtotal = eligibleItems.reduce(
     (sum, item) => sum + item.subtotal,
     0
   );
-
   let discount = 0;
 
   if (coupon.type === "percentage") {

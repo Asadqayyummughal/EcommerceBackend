@@ -13,9 +13,7 @@ export const validateCoupon = async (
     validFrom: { $lte: new Date() },
     validTill: { $gte: new Date() },
   });
-
   if (!coupon) throw new Error("Invalid coupon");
-
   // Global usage
   if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit)
     throw new Error("Coupon limit exceeded");

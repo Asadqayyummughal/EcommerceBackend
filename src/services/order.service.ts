@@ -9,7 +9,8 @@ import { appEventEmitter } from "../events/appEvents";
 import { validateCoupon } from "./coupon.service";
 import { getEligibleItems } from "./couponEligibility";
 import { calculateDiscount } from "./couponCalculator";
-import { log } from "console";
+import { Coupon } from "../models/coupon.model";
+import { CouponUsage } from "../models/couponUsage.model";
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ["paid", "cancelled"],
@@ -71,9 +72,21 @@ export const checkoutOrder = async (
     }
     const tax = subtotal * 0.1; //lock price
     const shipping = subtotal > 100 ? 0 : 10;
-    const totalAmount = subtotal + tax + shipping;
+    let totalAmount = subtotal + tax + shipping;
+    //coupon logic
+    const coupon = payload.couponCode
+      ? await validateCoupon(payload.couponCode, cart, userId)
+      : null;
+    let discountAmount = 0;
+    if (coupon) {
+      const eligibleItems = getEligibleItems(orderItems, coupon);
+      if (eligibleItems.length === 0) throw new Error("Coupon not applicable");
+      const discountData = calculateDiscount(coupon, eligibleItems);
+      discountAmount = discountData.discount;
+      totalAmount -= discountAmount;
+    }
+
     const order = await Order.create(
-      //create order
       [
         {
           user: userId,
@@ -85,29 +98,43 @@ export const checkoutOrder = async (
           totalAmount,
           paymentMethod: payload.paymentMethod,
           shippingAddress: payload.shippingAddress,
+          coupon: coupon
+            ? {
+                code: coupon.code,
+                discountAmount,
+              }
+            : undefined,
         },
       ],
       { session }
     );
+
+    if (coupon) {
+      await Coupon.updateOne(
+        { _id: coupon._id },
+        { $inc: { usedCount: 1 } },
+        { session }
+      );
+
+      await CouponUsage.create(
+        [
+          {
+            coupon: coupon._id,
+            user: userId,
+            order: order[0]._id,
+            usedAt: new Date(),
+          },
+        ],
+        { session }
+      );
+    }
+
     // 🔥 Clear cart
     cart.items = [];
     cart.totalItems = 0;
     cart.totalPrice = 0;
     await cart.save({ session });
     await session.commitTransaction();
-    //coupon logic
-    const coupon = payload.couponCode
-      ? await validateCoupon(payload.couponCode, cart, userId)
-      : null;
-    let discountAmount = 0;
-    // if (coupon) {
-    //   const eligibleItems = getEligibleItems(orderItems, coupon);
-    //   if (eligibleItems.length === 0) throw new Error("Coupon not applicable");
-    //   const discountData = calculateDiscount(coupon, eligibleItems);
-    //   discountAmount = discountData.discount;
-    //   totalAmount -= discountAmount;
-    // }
-
     session.endSession();
     return order[0];
   } catch (error) {
@@ -201,6 +228,15 @@ export const updateOrderStatus = async (
       !restoreStates.includes(order.status)
     ) {
       await restoreInventory(order, session);
+      if (order.coupon?.code) {
+        await Coupon.updateOne(
+          { code: order.coupon.code },
+          { $inc: { usedCount: -1 } },
+          { session }
+        );
+
+        await CouponUsage.deleteOne({ order: order._id }).session(session);
+      }
     }
 
     order.status = newStatus;
@@ -281,6 +317,7 @@ export const getOrderTracking = async (orderId: string, userId: string) => {
   if (!order) throw new Error("Order not found");
   return order;
 };
+
 // create shipment
 // export const createShipmentService = async (
 //   orderId: string,
