@@ -28,18 +28,6 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   );
   res.json(order);
 };
-export const shipOrder = async (req: Request, res: Response) => {
-  const order = await orderService.shipOrder(
-    req.params.id,
-    req.body,
-    req.user.id
-  );
-  res.json(order);
-};
-export const deliverOrder = async (req: Request, res: Response) => {
-  const order = await orderService.deliverOrder(req.params.id, req.user.id);
-  res.json(order);
-};
 
 export const trackOrder = async (req: Request, res: Response) => {
   const order = await orderService.getOrderTracking(req.params.id, req.user.id);

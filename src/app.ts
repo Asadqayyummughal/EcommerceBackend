@@ -11,6 +11,7 @@ import paymentRoutes from "./routes/payment.routes";
 import webhookRoutes from "./routes/webhook.routes";
 import dashboardRoutes from "./admin/routes/dashboard.routes";
 import couponRoutes from "./admin/routes/coupon.routes";
+import shipmentRoutes from "./admin/routes/shipment.routes";
 
 const app: Application = express();
 // webhook routes
@@ -28,6 +29,7 @@ app.get("/", (req, res) => {
 // amdin only apis
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/coupon", couponRoutes);
+app.use("/api/admin/shipment", shipmentRoutes);
 
 // IMPORTANT: userRoutes MUST be a Router(), not an object!
 app.use("/api/users", userRoutes);

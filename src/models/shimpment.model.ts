@@ -1,36 +1,47 @@
-import mongoose, { Schema } from "mongoose";
+import { Schema, model, Types } from "mongoose";
 
-const ShipmentSchema = new Schema(
+export interface IShipment {
+  order: Types.ObjectId;
+  user: Types.ObjectId;
+  carrier: string; // DHL, FedEx, TCS, Leopards
+  trackingNumber: string;
+  trackingUrl?: string;
+  items: {
+    product: Types.ObjectId;
+    variantSku?: string;
+    quantity: number;
+  }[];
+
+  status: "pending" | "shipped" | "delivered";
+  shippedAt?: Date;
+  deliveredAt?: Date;
+}
+
+const ShipmentSchema = new Schema<IShipment>(
   {
-    order: {
-      type: Schema.Types.ObjectId,
-      ref: "Order",
-      required: true,
-      index: true,
-    },
-
-    carrier: {
-      type: String, // TCS, DHL, FedEx, Leopard
-      required: true,
-    },
-
-    trackingNumber: {
-      type: String,
-      required: true,
-      unique: true,
-    },
+    order: { type: Schema.Types.ObjectId, ref: "Order", required: true },
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    carrier: { type: String, required: true },
+    trackingNumber: { type: String, required: true },
+    trackingUrl: String,
+    items: [
+      {
+        product: { type: Schema.Types.ObjectId, ref: "Product" },
+        variantSku: String,
+        quantity: Number,
+      },
+    ],
 
     status: {
       type: String,
-      enum: ["pending", "picked", "in_transit", "delivered", "failed"],
+      enum: ["pending", "shipped", "delivered"],
       default: "pending",
     },
 
     shippedAt: Date,
     deliveredAt: Date,
-
-    metadata: Schema.Types.Mixed, // courier response, label URL, etc.
   },
   { timestamps: true }
 );
-export default mongoose.model("Shipment", ShipmentSchema);
+
+export default model<IShipment>("Shipment", ShipmentSchema);

@@ -18,16 +18,5 @@ router.put(
   //   roleMiddleware(["admin"]),
   orderController.updateOrderStatus
 );
-router.post(
-  "/:id/ship",
-  authMiddleware,
-  //roleMiddleware(["admin"]),
-  orderController.shipOrder
-);
-router.post(
-  "/:id/deliver",
-  authMiddleware,
-  //roleMiddleware(["admin"]),
-  orderController.deliverOrder
-);
+
 export default router;
