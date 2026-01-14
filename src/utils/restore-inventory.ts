@@ -13,10 +13,10 @@ export const restoreInventory = async (
     if (item.variantSku) {
       const variant = product.variants?.find((v) => v.sku === item.variantSku);
       if (variant && variant.stock) {
-        variant.stock += item.quantity;
+        variant.reservedStock -= item.quantity;
       }
     } else {
-      product.stock += item.quantity;
+      product.reservedStock -= item.quantity;
     }
 
     await product.save({ session });

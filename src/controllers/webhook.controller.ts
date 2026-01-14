@@ -1,10 +1,11 @@
 import Stripe from "stripe";
-import Order from "../models/order.model";
+import Order, { IOrder } from "../models/order.model";
 import mongoose from "mongoose";
 
 import { Request, Response } from "express";
 import { restoreInventory } from "../utils/restore-inventory";
 import { appEventEmitter } from "../events/appEvents";
+import Product from "../models/product.model";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
@@ -35,6 +36,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         order.status = "paid";
         let orderId = order._id;
         let userId = order.user;
+        await finalizeStock(order);
         await order.save({ session });
         appEventEmitter.emit("order.placed", {
           orderId,
@@ -62,5 +64,24 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     await session.abortTransaction();
     session.endSession();
     res.status(500).send("Webhook processing failed");
+  }
+};
+
+const finalizeStock = async (order: IOrder) => {
+  for (const item of order.items) {
+    const product = await Product.findById(item.product);
+    if (product) {
+      if (item.variantSku) {
+        const variant = product.variants.find((v) => v.sku === item.variantSku);
+        if (variant) {
+          variant.stock -= item.quantity;
+          variant.reservedStock -= item.quantity;
+        }
+      } else {
+        product.stock -= item.quantity;
+        product.reservedStock -= item.quantity;
+      }
+      await product.save();
+    }
   }
 };

@@ -39,7 +39,6 @@ export const checkoutOrder = async (
     const orderItems = [];
     let subtotal = 0;
     for (const item of cart.items) {
-      //validate stock
       const product = await Product.findById(item.product).session(session);
       if (!product || !product.isActive) throw new Error("Product unavailable");
       let price = product.salePrice ?? product.price;
@@ -47,20 +46,26 @@ export const checkoutOrder = async (
         const variant = product.variants?.find(
           (v) => v.sku === item.variantSku
         );
-        if (variant && variant.stock && variant.stock >= item.quantity) {
-          price = variant.price ?? price;
-          variant.stock -= item.quantity;
-        } else {
+        if (!variant) throw new Error("Variant not found");
+        const available = variant.stock - (variant.reservedStock ?? 0);
+        if (available < item.quantity) {
           throw new Error("Variant out of stock");
         }
+        price = variant.price ?? price;
+        variant.reservedStock = (variant.reservedStock ?? 0) + item.quantity;
       } else {
-        if (product.stock < item.quantity)
+        const available = product.stock - (product.reservedStock ?? 0);
+        if (available < item.quantity) {
           throw new Error("Product out of stock");
-        product.stock -= item.quantity;
+        }
+        product.reservedStock = (product.reservedStock ?? 0) + item.quantity;
       }
+
       await product.save({ session });
+
       const itemSubtotal = price * item.quantity;
       subtotal += itemSubtotal;
+
       orderItems.push({
         product: product._id,
         variantSku: item.variantSku,
@@ -257,56 +262,6 @@ export const updateOrderStatus = async (
     session.endSession();
     throw error;
   }
-};
-
-export const shipOrder = async (
-  orderId: string,
-  payload: { carrier: string; trackingNumber: string },
-  adminId: string
-) => {
-  const order = await Order.findById(orderId);
-  if (!order) throw new Error("Order not found");
-  if (order.status !== "processing") {
-    throw new Error("Order not ready for shipment");
-  }
-  order.status = "shipped";
-  order.shipment = {
-    carrier: payload.carrier,
-    trackingNumber: payload.trackingNumber,
-    shippedAt: new Date(),
-  };
-
-  order.orderEvents.push({
-    status: "shipped",
-    message: "Order shipped",
-    createdAt: new Date(),
-    createdBy: adminId,
-  });
-
-  await order.save();
-  return order;
-};
-
-export const deliverOrder = async (orderId: string, adminId: string) => {
-  const order = await Order.findById(orderId);
-  if (!order) throw new Error("Order not found");
-
-  if (order.status !== "shipped") {
-    throw new Error("Order not shipped yet");
-  }
-
-  order.status = "delivered";
-  order.shipment.deliveredAt = new Date();
-
-  order.orderEvents.push({
-    status: "delivered",
-    message: "Order delivered successfully",
-    createdAt: new Date(),
-    createdBy: adminId,
-  });
-
-  await order.save();
-  return order;
 };
 
 export const getOrderTracking = async (orderId: string, userId: string) => {

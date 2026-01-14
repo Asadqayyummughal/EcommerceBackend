@@ -1,11 +1,12 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface IProductVariant {
-  sku?: string;
+  sku: string;
   attributes?: Record<string, string>; // e.g. { size: "M", color: "red" }
   price?: number;
-  stock?: number;
+  stock: number;
   images?: string[];
+  reservedStock: number;
 }
 
 export interface IProduct extends Document {
@@ -21,11 +22,13 @@ export interface IProduct extends Document {
   categories: mongoose.Types.ObjectId[]; // ref to Category (optional)
   tags: string[];
   images: string[];
-  variants?: IProductVariant[];
+  variants: IProductVariant[];
   stock: number;
+  reservedStock: number;
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+  // NEW
 }
 
 const VariantSchema = new Schema<IProductVariant>(
@@ -35,6 +38,7 @@ const VariantSchema = new Schema<IProductVariant>(
     price: { type: Number },
     stock: { type: Number, default: 0 },
     images: [{ type: String }],
+    reservedStock: { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -48,6 +52,10 @@ const ProductSchema = new Schema<IProduct>(
       unique: true,
       lowercase: true,
       trim: true,
+    },
+    reservedStock: {
+      type: Number,
+      default: 0,
     },
     description: { type: String },
     shortDescription: { type: String },
@@ -65,10 +73,8 @@ const ProductSchema = new Schema<IProduct>(
   },
   { timestamps: true }
 );
-
 // Text index for basic search on title & description
 ProductSchema.index({ title: "text", description: "text", tags: "text" });
-
 // Compound indexes for common sorting/filtering
 ProductSchema.index({ price: 1 });
 ProductSchema.index({ createdAt: -1 });

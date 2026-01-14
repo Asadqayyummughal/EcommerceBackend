@@ -8,16 +8,17 @@ router.post(
   //roleMiddleware(["admin"]),
   shipmentController.crateShipment
 );
-router.put(
-  "/:id/deliver",
-  authMiddleware,
-  //roleMiddleware(["admin"]),
-  shipmentController.markDelivered
-);
+
 router.put(
   "/:id/ship",
   authMiddleware,
   //roleMiddleware(["admin"]),
-  shipmentController.markShipped
+  shipmentController.markShipmentShipped
+);
+router.put(
+  "/:id/deliver",
+  authMiddleware,
+  //roleMiddleware(["admin"]),
+  shipmentController.markShipmentDelivered
 );
 export default router;

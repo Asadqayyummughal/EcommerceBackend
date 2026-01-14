@@ -26,7 +26,7 @@ import "../src/events/listeners";
 app.get("/", (req, res) => {
   res.send("API running...");
 });
-// amdin only apis
+// admin only apis
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/coupon", couponRoutes);
 app.use("/api/admin/shipment", shipmentRoutes);

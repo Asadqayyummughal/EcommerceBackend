@@ -1,7 +1,7 @@
 import Order from "../../models/order.model";
 import Shipment from "../../models/shimpment.model";
 
-export const createShipmentService = async (payload: {
+export const createShipment = async (payload: {
   carrier: string;
   trackingNumber: string;
   orderId: "string";
@@ -9,7 +9,6 @@ export const createShipmentService = async (payload: {
   const orderId = payload.orderId;
   const order = await Order.findById(orderId);
   if (!order) throw new Error("Order not found");
-
   if (order.status !== "processing")
     throw new Error("Order must be in processing state");
   const carrier = payload.carrier;
@@ -23,7 +22,6 @@ export const createShipmentService = async (payload: {
     trackingNumber,
     items,
   });
-
   return shipment;
 };
 
