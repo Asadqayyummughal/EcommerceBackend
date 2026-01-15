@@ -50,7 +50,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         stripePaymentIntentId: intent.id,
       }).session(session);
       if (order && !order.inventoryRestored) {
-        await restoreInventory(order, session);
+        await releaseStock(order);
         order.inventoryRestored = true;
         order.paymentStatus = "failed";
         order.status = "cancelled";
@@ -81,6 +81,24 @@ const finalizeStock = async (order: IOrder) => {
         product.stock -= item.quantity;
         product.reservedStock -= item.quantity;
       }
+      await product.save();
+    }
+  }
+};
+
+const releaseStock = async (order: IOrder) => {
+  for (const item of order.items) {
+    const product = await Product.findById(item.product);
+    if (product) {
+      if (item.variantSku) {
+        const variant = product.variants.find((v) => v.sku === item.variantSku);
+        if (variant) {
+          variant.reservedStock -= item.quantity;
+        }
+      } else {
+        product.reservedStock -= item.quantity;
+      }
+
       await product.save();
     }
   }

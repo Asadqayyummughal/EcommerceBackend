@@ -37,6 +37,7 @@ export type OrderStatus =
 export type PaymentMethod = "cod" | "stripe" | "paypal";
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId;
+  updatedAt: Date;
   items: IOrderItem[];
   totalItems: number;
   subtotal: number;
