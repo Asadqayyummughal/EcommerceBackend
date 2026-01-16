@@ -1,23 +1,113 @@
-import mongoose from "mongoose";
 import Order from "../models/order.model";
 import Product from "../models/product.model";
-import { Review } from "../models/reviews.model";
+import mongoose from "mongoose";
+import { Review } from "../models/review.model";
 
-export const addProductReviews = async (
-  orderId: string,
+export const createReview = async (
   userId: string,
-  review: { desc: string; rating: number }
+  orderId: string,
+  productId: string,
+  rating: number,
+  comment?: string
 ) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    if (!orderId) throw new Error("Product id missing");
-    let product = Order.findOne({ user: userId });
-    if (!product) throw new Error("Product not exist");
-  } catch (excep) {
-    throw excep;
+    const order = await Order.findOne({
+      _id: orderId,
+      user: userId,
+      status: "delivered",
+    }).session(session);
+    if (!order) {
+      throw new Error("Order not eligible for review");
+    }
+    const orderedItem = order.items.find(
+      (item: any) => item.product.toString() === productId
+    );
+
+    if (!orderedItem) {
+      throw new Error("Product not found in order");
+    }
+
+    const review = await Review.create(
+      [
+        {
+          user: userId,
+          order: orderId,
+          product: productId,
+          rating,
+          comment,
+        },
+      ],
+      { session }
+    );
+
+    await recalcProductRating(productId, session);
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return review[0];
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
 };
+export const getProductReviews = async (
+  productId: string,
+  page: number,
+  limit: number
+) => {
+  try {
+    const reviews = await Review.find({
+      product: productId,
+      isApproved: true,
+    })
+      .populate("user", "name avatar")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+    const total = await Review.countDocuments({
+      product: productId,
+      isApproved: true,
+    });
+    const pagination = {
+      totalPages: total,
+      pageNo: page,
+      pages: Math.ceil(total / limit),
+    };
 
-const recalcProductRating = async (productId: string) => {
+    return { reviews, pagination };
+  } catch (error) {
+    throw error;
+  }
+};
+export const updateReview = async (
+  userId: string,
+  reviewId: string,
+  rating: number,
+  comment: string
+) => {
+  const review = await Review.findOne({
+    _id: reviewId,
+    user: userId,
+  });
+
+  if (!review) throw new Error("Review not found");
+
+  review.rating = rating;
+  review.comment = comment;
+
+  await review.save();
+  await recalcProductRating(review.product.toString());
+
+  return review;
+};
+export const recalcProductRating = async (
+  productId: string,
+  session?: mongoose.ClientSession
+) => {
   const stats = await Review.aggregate([
     {
       $match: {
@@ -28,14 +118,36 @@ const recalcProductRating = async (productId: string) => {
     {
       $group: {
         _id: "$product",
-        avg: { $avg: "$rating" },
+        avgRating: { $avg: "$rating" },
         count: { $sum: 1 },
       },
     },
   ]);
+  await Product.findByIdAndUpdate(
+    productId,
+    {
+      averageRating: stats[0]?.avgRating || 0,
+      reviewCount: stats[0]?.count || 0,
+    },
+    { session }
+  );
+};
 
-  await Product.findByIdAndUpdate(productId, {
-    averageRating: stats[0]?.avg || 0,
-    reviewCount: stats[0]?.count || 0,
-  });
+export const deleteReview = async (
+  userId: string,
+  reviewId: string,
+  isAdmin = false
+) => {
+  const review = await Review.findById(reviewId);
+  if (!review) throw new Error("Review not found");
+  if (!isAdmin && review.user.toString() !== userId) {
+    throw new Error("Unauthorized");
+  }
+  let res = await review.deleteOne();
+  await recalcProductRating(review.product.toString());
+  return res;
+};
+export const getAllReviews = async () => {
+  const reviews = await Review.find().sort({ createdAt: -1 });
+  return reviews;
 };

@@ -13,6 +13,7 @@ import dashboardRoutes from "./admin/routes/dashboard.routes";
 import couponRoutes from "./admin/routes/coupon.routes";
 import shipmentRoutes from "./admin/routes/shipment.routes";
 import returnRoutes from "./routes/return.routes";
+import reviewRoutes from "./routes/review.routes";
 const app: Application = express();
 // webhook routes
 app.use("/api/webhook", webhookRoutes);
@@ -41,5 +42,6 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/payment/stripe", paymentRoutes);
 app.use("/api/return", returnRoutes);
+app.use("/api/review", reviewRoutes);
 
 export default app;

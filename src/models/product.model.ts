@@ -28,6 +28,8 @@ export interface IProduct extends Document {
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+  averageRating: string;
+  reviewCount: number;
   // NEW
 }
 
@@ -70,6 +72,8 @@ const ProductSchema = new Schema<IProduct>(
     variants: [VariantSchema],
     stock: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
+    reviewCount: { type: Number, default: 0 },
+    averageRating: { type: String },
   },
   { timestamps: true }
 );
@@ -78,7 +82,6 @@ ProductSchema.index({ title: "text", description: "text", tags: "text" });
 // Compound indexes for common sorting/filtering
 ProductSchema.index({ price: 1 });
 ProductSchema.index({ createdAt: -1 });
-
 const Product: Model<IProduct> = mongoose.model<IProduct>(
   "Product",
   ProductSchema

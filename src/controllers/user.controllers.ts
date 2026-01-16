@@ -13,7 +13,6 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
 export const getProfile = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
-
     return res.json({
       success: true,
       message: "Profile fetched successfully",
