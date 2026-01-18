@@ -43,5 +43,5 @@ app.use("/api/order", orderRoutes);
 app.use("/api/payment/stripe", paymentRoutes);
 app.use("/api/return", returnRoutes);
 app.use("/api/review", reviewRoutes);
-
+app.use("/api/wishlist", reviewRoutes);
 export default app;
