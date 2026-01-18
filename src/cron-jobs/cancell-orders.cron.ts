@@ -1,7 +1,8 @@
 import cron from "node-cron";
 import Order from "../models/order.model";
 import mongoose from "mongoose";
-import { restoreInventory } from "../services/inventory.service";
+import { restoreInventory } from "../utils/restore-inventory";
+
 cron.schedule("*/5 * * * *", async () => {
   console.log("⏱ Running unpaid order cleanup");
 
@@ -18,7 +19,7 @@ cron.schedule("*/5 * * * *", async () => {
     session.startTransaction();
 
     try {
-      //   await restoreInventory(order.items, session);
+      // await restoreInventory(order.items, session);
       order.status = "cancelled";
       await order.save({ session });
       await session.commitTransaction();
