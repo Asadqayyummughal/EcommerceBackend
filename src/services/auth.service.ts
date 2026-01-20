@@ -33,6 +33,7 @@ export const signupService = async (data: {
 
 export const loginService = async (email: string, password: string) => {
   const user = await User.findOne({ email });
+  debugger;
   if (!user) throw new Error("Invalid email or password");
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error("Invalid email or password");
@@ -81,7 +82,7 @@ export const refreshTokenService = async (refreshToken: string) => {
 
   // 4️⃣ Delete old refresh token (Token Rotation)
   user.refreshTokens = user.refreshTokens.filter(
-    (rt) => rt.token !== hashedRefresh
+    (rt) => rt.token !== hashedRefresh,
   );
 
   // 5️⃣ Generate new refresh token
@@ -163,7 +164,7 @@ export const forgotPasswordService = async (email: string) => {
 
 export const resetPasswordService = async (
   resetToken: string,
-  newPassword: string
+  newPassword: string,
 ) => {
   const hashedToken = crypto
     .createHash("sha256")

@@ -3,10 +3,6 @@ import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
 
-export const getAllUsersService = async (): Promise<IUser[]> => {
-  return User.find().lean();
-};
-
 export const getProfile = async (userId: string) => {
   const user = await User.findById(userId).select("-password");
   if (!user) throw new Error("User not found");
@@ -15,9 +11,7 @@ export const getProfile = async (userId: string) => {
 
 export const updateProfile = async (userId: string, data: any) => {
   const user = await User.findById(userId);
-
   const updateData = { ...data };
-
   if (data.email == user?.email) {
     delete updateData.email;
   }
@@ -32,7 +26,7 @@ export const updateProfile = async (userId: string, data: any) => {
 export const changePassword = async (
   userId: string,
   oldPassword: string,
-  newPassword: string
+  newPassword: string,
 ) => {
   const user = await User.findById(userId);
   if (!user) throw new Error("User not found");

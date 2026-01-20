@@ -14,6 +14,11 @@ import couponRoutes from "./admin/routes/coupon.routes";
 import shipmentRoutes from "./admin/routes/shipment.routes";
 import returnRoutes from "./routes/return.routes";
 import reviewRoutes from "./routes/review.routes";
+import wishlistRoutes from "./routes/wishlist.routes";
+import permissionRoutes from "./admin/routes/permission.routes";
+import rolesRoutes from "./admin/routes/role.routes";
+import adminUsersRoutes from "./admin/routes/users.routes";
+
 const app: Application = express();
 // webhook routes
 app.use("/api/webhook", webhookRoutes);
@@ -21,7 +26,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-//events
+//events.
 import "../src/events/listeners";
 
 app.get("/", (req, res) => {
@@ -31,7 +36,10 @@ app.get("/", (req, res) => {
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/coupon", couponRoutes);
 app.use("/api/admin/shipment", shipmentRoutes);
-
+app.use("/api/admin/shipment", shipmentRoutes);
+app.use("/api/admin/permissions", permissionRoutes);
+app.use("/api/admin/roles", rolesRoutes);
+app.use("/api/admin/users", adminUsersRoutes);
 // IMPORTANT: userRoutes MUST be a Router(), not an object!
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
@@ -43,5 +51,5 @@ app.use("/api/order", orderRoutes);
 app.use("/api/payment/stripe", paymentRoutes);
 app.use("/api/return", returnRoutes);
 app.use("/api/review", reviewRoutes);
-app.use("/api/wishlist", reviewRoutes);
+app.use("/api/wishlist", wishlistRoutes);
 export default app;

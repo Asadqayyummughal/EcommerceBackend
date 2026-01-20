@@ -73,9 +73,9 @@ export const getProductReviews = async (
       isApproved: true,
     });
     const pagination = {
-      totalPages: total,
+      docsCount: total,
       pageNo: page,
-      pages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit),
     };
 
     return { reviews, pagination };

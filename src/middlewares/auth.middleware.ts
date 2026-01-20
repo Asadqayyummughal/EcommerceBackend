@@ -24,7 +24,6 @@ export const authMiddleware = (
     }
     // Extract token
     token = token.split(" ")[1];
-
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET as string
@@ -36,6 +35,7 @@ export const authMiddleware = (
       name: decoded.name,
       email: decoded.email,
       phone: decoded.phone,
+      role: decoded.role,
     };
     next();
   } catch (err) {

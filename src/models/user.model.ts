@@ -1,9 +1,9 @@
 import mongoose, { Document, Model } from "mongoose";
-
+import { USER_ROLES, UserRole } from "./role.model";
 export interface IUser extends Document {
   id?: string;
   name: string;
-  role?: string;
+  role: mongoose.Types.ObjectId;
   phone: string;
   email: string;
   password: string;
@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema<IUser>(
     phone: { type: String, required: false },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    role: {
+      type: mongoose.Types.ObjectId,
+      ref: "Role",
+    }, // enum for type safe
     image: { type: String, default: "uploads/profile/default.jpg" },
     refreshTokens: [
       {
@@ -37,8 +41,24 @@ const userSchema = new mongoose.Schema<IUser>(
     resetPasswordToken: String,
     resetPasswordExpires: Date,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+userSchema.pre("save", async function () {
+  // ↑ no parameter here
+  debugger;
 
+  if (this.isNew && !this.role) {
+    const defaultRole = await mongoose.model("Role").findOne({ name: "user" });
+
+    if (!defaultRole) {
+      throw new Error("Default 'user' role not found in database");
+      // or: create it here if you want auto-seed behavior
+    }
+
+    this.role = defaultRole._id;
+  }
+
+  // No need to call next() — mongoose waits for the promise automatically
+});
 const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
 export default User;
