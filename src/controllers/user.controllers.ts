@@ -1,20 +1,6 @@
 import { Request, Response } from "express";
 import * as userService from "../services/user.service";
 
-export const getProfile = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).userId;
-    debugger;
-    return res.json({
-      success: true,
-      message: "Profile fetched successfully",
-      userId,
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
 export const getProfileController = async (req: Request, res: Response) => {
   try {
     const user = await userService.getProfile(req.user.id);

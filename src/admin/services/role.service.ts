@@ -1,35 +1,35 @@
 import Permission from "../../models/permission.model";
-import Role from "../../models/role.model";
+import Role, { UserRole } from "../../models/role.model";
 import User from "../../models/user.model";
 
 export const createRole = async (
-  name: string,
+  name: UserRole,
   description: string,
   permissions: Array<string>,
 ) => {
   const exists = await Role.findOne({ name });
   if (exists) throw new Error("Role already exists");
-  let permissionIds = null;
   // null permissions = full access role
+  debugger;
   if (permissions !== null) {
     const permissionDocs = await Permission.find({
-      key: { $in: permissions },
+      _id: { $in: permissions },
     });
-    const foundKeys = permissionDocs.map((p) => p._id);
+    const foundKeys = permissionDocs.map((p) => p._id.toString());
     const invalidKeys = permissions.filter((p) => !foundKeys.includes(p));
-
     if (invalidKeys.length) {
       throw new Error(`Invalid permissions: ${invalidKeys.join(", ")}`);
     }
-    permissionIds = permissionDocs.map((p) => p._id);
+  } else {
+    if (name !== "admin" && !permissions)
+      throw new Error("Kindly provide the role permissions");
   }
 
   const role = await Role.create({
     name,
     description,
-    permissions: permissionIds,
+    permissions: permissions,
   });
-
   return role;
 };
 
