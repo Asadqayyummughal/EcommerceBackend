@@ -1,6 +1,4 @@
-// models/role.model.ts
 import { Schema, model, Document, Types } from "mongoose";
-// roles.ts (or constants/roles.ts)
 export const USER_ROLES = [
   "admin",
   "seller",

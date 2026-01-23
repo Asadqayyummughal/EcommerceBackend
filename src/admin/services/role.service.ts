@@ -17,19 +17,16 @@ export const createRole = async (
   if (name == "admin") {
     permissionIds = null;
   } else {
-    // permissionIds = toObjectIds(permissions);
     const permissionDocs = await Permission.find({
       _id: { $in: permissions },
     });
-    debugger;
-    // permissionIds = toObjectIds(permissions);
-    const foundKeys = permissionDocs.map((p) => p._id);
-    // const invalidKeys = permissions.filter((p) => !foundKeys.includes(p));
-    // if (invalidKeys.length) {
-    //   throw new Error(`Invalid permissions: ${invalidKeys.join(", ")}`);
-    // }
+    const foundIds = permissionDocs.map((p) => p._id.toString());
+    const invalidKeys = permissions.filter((id) => !foundIds.includes(id));
+    if (invalidKeys.length) {
+      throw new Error(`Invalid permissions: ${invalidKeys.join(", ")}`);
+    }
+    permissionIds = toObjectIds(permissions);
   }
-  permissionIds = toObjectIds(permissions);
   const role = await Role.create({
     name,
     description,
@@ -61,8 +58,6 @@ export const updateRole = async (
     if (permissions === null) {
       updateData.permissions = null;
     } else {
-      // permissions = toObjectIds(permissions);
-      debugger;
       const permissionDocs = await Permission.find({
         _id: { $in: permissions },
       });
