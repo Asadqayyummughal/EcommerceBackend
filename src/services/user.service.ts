@@ -4,7 +4,17 @@ import fs from "fs";
 import path from "path";
 
 export const getProfile = async (userId: string) => {
-  const user = await User.findById(userId).select("-password");
+  const user = await User.findById(userId)
+    .select("-password")
+    .populate({
+      path: "role",
+      select: "-createdAt  -updatedAt ", // exclude createdAt from the populated Role
+      populate: {
+        path: "permissions", // ← nested populate
+        select: "key module", // or whatever fields you need (or omit to get all)
+        // model: "Permission"         // usually not needed if ref is correct
+      },
+    });
   if (!user) throw new Error("User not found");
   return user;
 };

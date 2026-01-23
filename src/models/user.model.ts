@@ -44,12 +44,8 @@ const userSchema = new mongoose.Schema<IUser>(
   { timestamps: true },
 );
 userSchema.pre("save", async function () {
-  // ↑ no parameter here
-  debugger;
-
   if (this.isNew && !this.role) {
     const defaultRole = await mongoose.model("Role").findOne({ name: "user" });
-
     if (!defaultRole) {
       throw new Error("Default 'user' role not found in database");
       // or: create it here if you want auto-seed behavior

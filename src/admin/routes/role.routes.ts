@@ -23,18 +23,23 @@ router.put(
   // requirePermission("role.manage"),
   rolesController.assignRoleToUser,
 );
-// router.get("/:id", authMiddleware, requirePermission("role.manage"), getRole);
-// router.put(
-//   "/:id",
-//   authMiddleware,
-//   requirePermission("role.manage"),
-//   updateRole,
-// );
-// router.delete(
-//   "/:id",
-//   authMiddleware,
-//   requirePermission("role.manage"),
-//   deleteRole,
-// );
+router.get(
+  "/:id",
+  authMiddleware,
+  // requirePermission("role.manage"),
+  rolesController.getRole,
+);
+router.put(
+  "/:id",
+  authMiddleware,
+  // requirePermission("role.manage"),
+  rolesController.updateRole,
+);
+router.delete(
+  "/:id",
+  authMiddleware,
+  // requirePermission("role.manage"),
+  rolesController.deleteRole,
+);
 
 export default router;

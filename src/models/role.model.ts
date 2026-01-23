@@ -1,7 +1,13 @@
 // models/role.model.ts
 import { Schema, model, Document, Types } from "mongoose";
 // roles.ts (or constants/roles.ts)
-export const USER_ROLES = ["admin", "seller", "support", "user"] as const;
+export const USER_ROLES = [
+  "admin",
+  "seller",
+  "support",
+  "user",
+  "tester",
+] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 export interface IRole extends Document {
   name: UserRole;
