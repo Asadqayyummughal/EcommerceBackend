@@ -17,42 +17,44 @@ export const addToCartService = async (
   userId: string,
   productId: string,
   quantity: number,
-  variantSku?: string
+  variantSku?: string,
 ) => {
   const product = await Product.findById(productId);
   if (!product || !product.isActive) {
     throw new Error("Product not available");
   }
-
   let price = product.salePrice ?? product.price;
   if (variantSku) {
     const variant = product.variants?.find((v) => v.sku === variantSku);
     if (!variant) throw new Error("Variant not found");
     if (variant.stock && variant.stock < quantity)
       throw new Error(
-        `Less stock available we have just ${variant.stock} ${product.title} available`
+        `Less stock available we have just ${variant.stock} ${product.title} available`,
       );
     price = variant.price ?? price;
   }
-
   let cart = await Cart.findOne({ user: userId });
   if (!cart) {
     cart = await Cart.create({ user: userId, items: [] });
   }
 
   const existingItem = cart.items.find(
-    (i) => i.product.toString() === productId && i.variantSku === variantSku
+    (i) => i.product.toString() === productId && i.variantSku === variantSku,
   );
   if (existingItem) {
     existingItem.quantity += Number(quantity);
   } else {
-    cart.items.push({ product: productId as any, quantity, price, variantSku });
+    cart.items.push({
+      product: productId as any,
+      quantity,
+      price,
+      variantSku,
+      vendor: product.vendor,
+    });
   }
-
   const totals = calculateCartTotals(cart.items);
   cart.totalItems = totals.totalItems;
   cart.totalPrice = totals.totalPrice;
-
   await cart.save();
   return cart;
 };
@@ -61,12 +63,12 @@ export const updateCartItemService = async (
   userId: string,
   productId: string,
   quantity: number,
-  variantSku?: string
+  variantSku?: string,
 ) => {
   const cart = await Cart.findOne({ user: userId });
   if (!cart) throw new Error("Cart not found");
   const item = cart.items.find(
-    (i) => i.product.toString() === productId && i.variantSku === variantSku
+    (i) => i.product.toString() === productId && i.variantSku === variantSku,
   );
   if (!item) throw new Error("Item not found in cart");
   item.quantity = quantity;
@@ -78,7 +80,7 @@ export const updateCartItemService = async (
 export const removeCartItemService = async (
   userId: string,
   productId: string,
-  variantSku?: string
+  variantSku?: string,
 ) => {
   // Validate ObjectId format early
   if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(productId)) {
@@ -104,7 +106,7 @@ export const removeCartItemService = async (
   if (itemIndex === -1) {
     if (variantSku) {
       throw new Error(
-        `Item with product ID "${productId}" and variant SKU "${variantSku}" not found in cart`
+        `Item with product ID "${productId}" and variant SKU "${variantSku}" not found in cart`,
       );
     } else {
       throw new Error(`Product with ID "${productId}" not found in cart`);
@@ -125,13 +127,13 @@ export const removeCartItemService = async (
 export const clearCartService = async (userId: string) => {
   await Cart.findOneAndUpdate(
     { user: userId },
-    { items: [], totalItems: 0, totalPrice: 0 }
+    { items: [], totalItems: 0, totalPrice: 0 },
   );
 };
 
 export const syncCartService = async (
   userId: string,
-  guestItems: SyncItem[]
+  guestItems: SyncItem[],
 ) => {
   let cart = await Cart.findOne({ user: userId });
 
@@ -159,7 +161,7 @@ export const syncCartService = async (
     cart.items.map((item) => [
       `${item.product.toString()}-${item.variantSku ?? ""}`,
       item,
-    ])
+    ]),
   );
 
   for (const guestItem of guestItems) {
@@ -171,7 +173,7 @@ export const syncCartService = async (
     // Variant handling
     if (guestItem.variantSku) {
       const variant = product.variants?.find(
-        (v) => v.sku === guestItem.variantSku
+        (v) => v.sku === guestItem.variantSku,
       );
       if (variant?.price) price = variant.price;
     }
@@ -189,6 +191,7 @@ export const syncCartService = async (
         variantSku: guestItem.variantSku,
         quantity: guestItem.quantity,
         price,
+        vendor: product.vendor,
       });
     }
   }
@@ -198,7 +201,7 @@ export const syncCartService = async (
 
   cart.totalPrice = cart.items.reduce(
     (sum, i) => sum + i.quantity * i.price,
-    0
+    0,
   );
 
   await cart.save();

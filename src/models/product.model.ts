@@ -20,6 +20,7 @@ export interface IProduct extends Document {
   sku?: string;
   brand?: string;
   categories: mongoose.Types.ObjectId[]; // ref to Category (optional)
+  vendor: mongoose.Types.ObjectId;
   tags: string[];
   images: string[];
   variants: IProductVariant[];
@@ -42,7 +43,7 @@ const VariantSchema = new Schema<IProductVariant>(
     images: [{ type: String }],
     reservedStock: { type: Number, default: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ProductSchema = new Schema<IProduct>(
@@ -74,8 +75,13 @@ const ProductSchema = new Schema<IProduct>(
     isActive: { type: Boolean, default: true },
     reviewCount: { type: Number, default: 0 },
     averageRating: { type: String },
+    vendor: {
+      type: Schema.Types.ObjectId,
+      ref: "Vendor",
+      required: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 // Text index for basic search on title & description
 ProductSchema.index({ title: "text", description: "text", tags: "text" });
@@ -84,6 +90,6 @@ ProductSchema.index({ price: 1 });
 ProductSchema.index({ createdAt: -1 });
 const Product: Model<IProduct> = mongoose.model<IProduct>(
   "Product",
-  ProductSchema
+  ProductSchema,
 );
 export default Product;

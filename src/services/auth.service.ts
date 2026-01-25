@@ -18,10 +18,8 @@ export const signupService = async (data: {
   // Check if user exists
   const existing = await User.findOne({ email });
   if (existing) throw new Error("Email already exists");
-
   // Hash password
   const hashedPass = await bcrypt.hash(password, 10);
-
   const user = await User.create({
     name,
     email,

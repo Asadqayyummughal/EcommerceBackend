@@ -11,7 +11,7 @@ interface JwtPayload {
 export const authMiddleware = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     let token = req.headers.authorization;
@@ -26,7 +26,7 @@ export const authMiddleware = (
     token = token.split(" ")[1];
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET as string
+      process.env.JWT_SECRET as string,
     ) as AuthUser;
     // attach user id to request object
 

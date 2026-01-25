@@ -5,6 +5,7 @@ export interface ICartItem {
   variantSku?: string; // optional (for variants)
   quantity: number;
   price: number; // snapshot price
+  vendor: mongoose.Types.ObjectId;
 }
 
 export interface ICart extends Document {
@@ -17,11 +18,12 @@ export interface ICart extends Document {
 const CartItemSchema = new Schema<ICartItem>(
   {
     product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+    vendor: { type: Schema.Types.ObjectId, ref: "Vendor", required: true },
     variantSku: { type: String },
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const CartSchema = new Schema<ICart>(
@@ -31,7 +33,7 @@ const CartSchema = new Schema<ICart>(
     totalItems: { type: Number, default: 0 },
     totalPrice: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model<ICart>("Cart", CartSchema);

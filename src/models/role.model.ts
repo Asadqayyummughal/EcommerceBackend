@@ -14,7 +14,6 @@ export interface IRole extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-
 const roleSchema = new Schema<IRole>(
   {
     name: {
@@ -25,7 +24,6 @@ const roleSchema = new Schema<IRole>(
       lowercase: true, // normalize
       trim: true,
     },
-
     permissions: {
       type: [Schema.Types.ObjectId],
       ref: "Permission", // ← must match your Permission model's name
