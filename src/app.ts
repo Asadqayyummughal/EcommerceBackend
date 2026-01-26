@@ -18,7 +18,7 @@ import wishlistRoutes from "./routes/wishlist.routes";
 import permissionRoutes from "./admin/routes/permission.routes";
 import rolesRoutes from "./admin/routes/role.routes";
 import adminUsersRoutes from "./admin/routes/users.routes";
-
+import vendorRoutes from "./routes/vendor.routes";
 const app: Application = express();
 // webhook routes
 app.use("/api/webhook", webhookRoutes);
@@ -52,4 +52,5 @@ app.use("/api/payment/stripe", paymentRoutes);
 app.use("/api/return", returnRoutes);
 app.use("/api/review", reviewRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/vendor", vendorRoutes);
 export default app;

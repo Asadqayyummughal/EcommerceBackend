@@ -1,5 +1,4 @@
 import mongoose, { Document, Model } from "mongoose";
-import { USER_ROLES, UserRole } from "./role.model";
 export interface IUser extends Document {
   id?: string;
   name: string;

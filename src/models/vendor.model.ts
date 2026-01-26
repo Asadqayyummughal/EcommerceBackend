@@ -1,12 +1,19 @@
 import mongoose, { Model, model, Schema } from "mongoose";
 // types/vendor.ts
+export const VENDOR_STATUS = [
+  "pending",
+  "active",
+  "suspended",
+  "rejected",
+] as const;
+export type VendorStatusType = (typeof VENDOR_STATUS)[number];
 export interface IVendor {
   _id?: string;
   name: string;
   user: mongoose.Types.ObjectId; // ObjectId string
   email?: string;
   phone?: string;
-  status: "pending" | "active" | "suspended" | "rejected";
+  status: VendorStatusType;
   commissionRate: number;
   approvedAt?: string | Date;
   approvedBy?: string; // ObjectId string (admin)
@@ -27,7 +34,7 @@ const vendorSchema = new Schema<IVendor>(
     phone: String,
     status: {
       type: String,
-      enum: ["pending", "active", "suspended", "rejected"],
+      enum: VENDOR_STATUS,
       default: "pending",
     },
     commissionRate: {

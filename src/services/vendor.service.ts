@@ -1,8 +1,8 @@
 import { Vendor } from "../models/vendor.model";
 import User from "../models/user.model";
 export const applyVendor = async (userId: string) => {
-  const existing = await Vendor.findOne({ user: userId });
   let user = await User.findById(userId);
+  const existing = await Vendor.findOne({ user: userId });
   if (existing) {
     throw new Error("Vendor already exists");
   }
@@ -15,4 +15,14 @@ export const applyVendor = async (userId: string) => {
     });
     return vendor;
   }
+};
+
+export const getVendorsByStatus = async (status: string) => {
+  const vendors = await Vendor.find({ status: status });
+  return vendors;
+};
+
+export const approveVendor = async (vendorId: string) => {
+  const isExist = await Vendor.findOne({ _id: vendorId });
+  if (!isExist) throw Error("Vendor Does not exist");
 };
