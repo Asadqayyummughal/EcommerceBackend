@@ -5,6 +5,7 @@ export const USER_ROLES = [
   "support",
   "user",
   "tester",
+  "vendor",
 ] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 export interface IRole extends Document {

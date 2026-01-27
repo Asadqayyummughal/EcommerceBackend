@@ -8,6 +8,7 @@ export const PERMISSION_MATRIX = {
     "order.cancel",
     "wishlist.manage",
     "coupon.apply",
+    "ADMIN_VENDOR_READ",
   ],
 
   // 🧑‍💼 ADMIN
@@ -25,3 +26,15 @@ export const PERMISSION_MATRIX = {
     "product.update",
   ],
 } as const;
+
+// ADMIN_VENDOR_READ
+// ADMIN_VENDOR_APPROVE
+// ADMIN_VENDOR_REJECT
+// ADMIN_VENDOR_SUSPEND
+// VENDOR_PRODUCT_CREATE
+// VENDOR_PRODUCT_UPDATE
+// VENDOR_ORDER_READ
+// VENDOR_ORDER_UPDATE_STATUS
+// USER_VENDOR_APPLY
+// ADMIN_VENDOR_APPROVE
+// ADMIN_VENDOR_READ

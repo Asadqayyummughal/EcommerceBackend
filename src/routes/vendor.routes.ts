@@ -8,7 +8,9 @@ router.get(
   authMiddleware,
   vendorController.getVendorsByStatus,
 ); //admin only
-
-router.put("/:id/approve"); // approveVenodor
-
+router.put(
+  "/:vendorId/approve",
+  authMiddleware,
+  vendorController.approveVendor,
+); // approveVenodor
 export default router;

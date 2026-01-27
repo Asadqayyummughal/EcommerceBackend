@@ -11,7 +11,7 @@ export const applyVendor = async (req: Request, res: Response) => {
   } catch (Error: any) {
     res.status(400).json({
       success: false,
-      message: Error.meessage,
+      message: Error.message,
     });
   }
 };
@@ -27,7 +27,24 @@ export const getVendorsByStatus = async (req: Request, res: Response) => {
   } catch (Error: any) {
     res.status(400).json({
       success: false,
-      message: Error.meessage,
+      message: Error.message,
+    });
+  }
+};
+export const approveVendor = async (req: Request, res: Response) => {
+  try {
+    let vendor = await VendorController.approveVendor(
+      req.params.vendorId,
+      req.user.id,
+    );
+    return res.status(201).json({
+      success: true,
+      data: vendor,
+    });
+  } catch (Error: any) {
+    return res.status(401).json({
+      success: false,
+      message: Error.message,
     });
   }
 };
