@@ -30,7 +30,11 @@ export const listProductsService = async (opts: ProductQueryOptions) => {
   const limit = Math.min(100, opts.limit ?? 20);
   const skip = (page - 1) * limit;
 
-  const filter: any = {};
+  const filter: any = {
+    isActive: true,
+    status: "approved",
+  };
+
   if (opts.isActive !== undefined) filter.isActive = opts.isActive;
   if (opts.minPrice !== undefined || opts.maxPrice !== undefined) {
     filter.price = {};
@@ -55,7 +59,12 @@ export const listProductsService = async (opts: ProductQueryOptions) => {
   }
 
   const [items, total] = await Promise.all([
-    Product.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+    Product.find(filter)
+      .populate("vendor", "storeName")
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
     Product.countDocuments(filter),
   ]);
 
@@ -71,7 +80,7 @@ export const listProductsService = async (opts: ProductQueryOptions) => {
 };
 export const updateProductService = async (
   id: string,
-  payload: Partial<IProduct>
+  payload: Partial<IProduct>,
 ) => {
   const product = await Product.findByIdAndUpdate(id, payload, { new: true });
   if (!product) throw new Error("Product not found");
