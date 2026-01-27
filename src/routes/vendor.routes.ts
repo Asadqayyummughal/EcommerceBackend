@@ -9,6 +9,6 @@ router.get(
   vendorController.getVendorsByStatus,
 ); //admin only
 
-router.put("/:id/approve"); // approveVenodor
+// router.put("/:id/approve",vendorController); // approveVenodor
 
 export default router;

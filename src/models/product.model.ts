@@ -76,9 +76,9 @@ const ProductSchema = new Schema<IProduct>(
     reviewCount: { type: Number, default: 0 },
     averageRating: { type: String },
     vendor: {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Vendor",
-      required: true,
+      index: true,
     },
   },
   { timestamps: true },

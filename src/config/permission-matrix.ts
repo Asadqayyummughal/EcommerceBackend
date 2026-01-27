@@ -24,4 +24,13 @@ export const PERMISSION_MATRIX = {
     "product.read",
     "product.update",
   ],
+  vendor: [
+    "product:create",
+    "product:update",
+    "product:delete",
+    "product:read",
+    "product:read:own",
+    "product:update:own",
+    "product:delete:own",
+  ],
 } as const;
