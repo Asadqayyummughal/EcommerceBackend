@@ -34,7 +34,6 @@ export const listProductsService = async (opts: ProductQueryOptions) => {
     isActive: true,
     status: "approved",
   };
-
   if (opts.isActive !== undefined) filter.isActive = opts.isActive;
   if (opts.minPrice !== undefined || opts.maxPrice !== undefined) {
     filter.price = {};

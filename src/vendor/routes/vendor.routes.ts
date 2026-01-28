@@ -1,7 +1,7 @@
 import { Router } from "express";
 const router = Router();
-import * as vendorController from "../controllers/vendor.controller";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import * as vendorController from "../controller/vendor.controller";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 router.post("/", authMiddleware, vendorController.applyVendor);
 router.get(
   "/getVendorsByStatus",
@@ -13,4 +13,6 @@ router.put(
   authMiddleware,
   vendorController.approveVendor,
 ); // approveVenodor
+
+router.post("/product/");
 export default router;

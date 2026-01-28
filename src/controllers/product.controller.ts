@@ -1,14 +1,17 @@
 import { Request, Response } from "express";
 import * as productService from "../services/product.service";
+import mongoose, { Types } from "mongoose";
+import { toObjectId } from "../utils/helpers.utils";
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
     // images uploaded via multer -> req.files
     const images =
       (req.files as Express.Multer.File[] | undefined)?.map(
-        (f) => `/uploads/products/${f.filename}`
+        (f) => `/uploads/products/${f.filename}`,
       ) || [];
     const payload = { ...req.body, images };
+    payload.createdBy = toObjectId(req.user.id);
     const product = await productService.createProductService(payload as any);
     return res.status(201).json({ success: true, product });
   } catch (err: any) {
@@ -55,7 +58,7 @@ export const updateProduct = async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
     const images = (req.files as Express.Multer.File[] | undefined)?.map(
-      (f) => `/uploads/products/${f.filename}`
+      (f) => `/uploads/products/${f.filename}`,
     );
     const payload = { ...req.body } as any;
     if (images && images.length) payload.images = images;

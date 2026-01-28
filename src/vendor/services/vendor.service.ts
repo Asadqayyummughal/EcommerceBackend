@@ -1,6 +1,6 @@
-import { Vendor } from "../models/vendor.model";
-import User from "../models/user.model";
-import Role from "../models/role.model";
+import { Vendor } from "../../models/vendor.model";
+import User from "../../models/user.model";
+import Role from "../../models/role.model";
 export const applyVendor = async (userId: string) => {
   let user = await User.findById(userId);
   const existing = await Vendor.findOne({ user: userId });

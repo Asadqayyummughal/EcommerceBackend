@@ -21,6 +21,7 @@ export interface IProduct extends Document {
   brand?: string;
   categories: mongoose.Types.ObjectId[]; // ref to Category (optional)
   vendor: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId;
   tags: string[];
   images: string[];
   variants: IProductVariant[];
@@ -78,6 +79,11 @@ const ProductSchema = new Schema<IProduct>(
     vendor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Vendor",
+      index: true,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       index: true,
     },
   },
