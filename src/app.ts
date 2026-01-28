@@ -19,7 +19,7 @@ import permissionRoutes from "./admin/routes/permission.routes";
 import rolesRoutes from "./admin/routes/role.routes";
 import adminUsersRoutes from "./admin/routes/users.routes";
 import vendorRoutes from "./vendor/routes/vendor.routes";
-import vendorProductRoutes from "./vendor/routes/ven-product.routes";
+import vendorProductRoutes from "./vendor/routes/vendor-product.routes";
 const app: Application = express();
 // webhook routes
 app.use("/api/webhook", webhookRoutes);

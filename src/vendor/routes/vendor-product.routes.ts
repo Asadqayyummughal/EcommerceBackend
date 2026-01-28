@@ -5,7 +5,7 @@ import { authMiddleware } from "../../middlewares/auth.middleware";
 import { uploadMiddleware } from "../../middlewares/multer";
 const router = Router();
 router.post(
-  "",
+  "/",
   authMiddleware,
   requirePermission("product:create"),
   uploadMiddleware.array("images", 6),
