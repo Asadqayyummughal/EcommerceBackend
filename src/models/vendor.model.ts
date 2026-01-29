@@ -7,7 +7,7 @@ export const VENDOR_STATUS = [
   "rejected",
 ] as const;
 export type VendorStatusType = (typeof VENDOR_STATUS)[number];
-export interface IVendor {
+export interface IVendor extends Document {
   _id?: string;
   name: string;
   user: mongoose.Types.ObjectId; // ObjectId string
@@ -49,4 +49,7 @@ const vendorSchema = new Schema<IVendor>(
   },
   { timestamps: true },
 );
-export const Vendor: Model<IVendor> = mongoose.model("Vendor", vendorSchema);
+export const Vendor: Model<IVendor> = mongoose.model<IVendor>(
+  "Vendor",
+  vendorSchema,
+);
