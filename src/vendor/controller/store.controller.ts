@@ -1,0 +1,31 @@
+import { Request, Response } from "express";
+import * as storeService from "../services/store.service";
+export const createStore = async (req: Request, res: Response) => {
+  try {
+    let store = await storeService.createStore(req.user.id, req.body);
+    res.status(201).json({
+      success: true,
+      data: store,
+    });
+  } catch (Error: any) {
+    res.status(400).json({
+      success: false,
+      Error: Error.message,
+    });
+  }
+};
+
+export const approveStore = async (req: Request, res: Response) => {
+  try {
+    let store = await storeService.approveStore(req.params.id, req.body);
+    res.status(200).json({
+      success: true,
+      data: store,
+    });
+  } catch (Error: any) {
+    res.status(400).json({
+      success: true,
+      Error: Error.message,
+    });
+  }
+};

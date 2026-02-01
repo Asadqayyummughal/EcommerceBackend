@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import Product, { IProduct } from "../models/product.model";
+import { Store } from "../models/store.model";
+import { Vendor } from "../models/vendor.model";
 
 export interface ProductQueryOptions {
   page?: number;
@@ -13,7 +15,21 @@ export interface ProductQueryOptions {
   isActive?: boolean;
 }
 export const createProductService = async (payload: Partial<IProduct>) => {
-  const product = await Product.create(payload);
+  const vendor = await Vendor.findOne({
+    user: payload.createdBy,
+    status: "active",
+  });
+  if (!vendor) throw new Error("vendor not exist");
+  const store = await Store.findOne({
+    vendor: vendor?._id,
+    status: "approved",
+  });
+  if (!store) throw new Error("Store not approved");
+  const product = await Product.create({
+    ...payload,
+    vendor: vendor._id,
+    store: store._id,
+  });
   return product.toObject();
 };
 
@@ -52,11 +68,9 @@ export const listProductsService = async (opts: ProductQueryOptions) => {
     const [key, dir] = opts.sort.split(":");
     sort = { [key]: dir === "asc" ? 1 : -1 };
   }
-
   if (opts.q) {
     filter.$text = { $search: opts.q };
   }
-
   const [items, total] = await Promise.all([
     Product.find(filter)
       .populate("vendor", "storeName")
@@ -90,4 +104,13 @@ export const deleteProductService = async (id: string) => {
   const p = await Product.findByIdAndDelete(id);
   if (!p) throw new Error("Product not found");
   return true;
+};
+
+export const getProductsByStore = async (vendorId: string) => {
+  let store = await Store.findOne({ vendor: vendorId });
+  if (!store) throw new Error("Store does not exist");
+  return await Product.find({
+    store: store._id,
+    isActive: true,
+  });
 };

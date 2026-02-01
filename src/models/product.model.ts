@@ -20,7 +20,6 @@ export interface IProduct extends Document {
   sku?: string;
   brand?: string;
   categories: mongoose.Types.ObjectId[]; // ref to Category (optional)
-  vendor: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
   tags: string[];
   images: string[];
@@ -32,6 +31,8 @@ export interface IProduct extends Document {
   updatedAt?: Date;
   averageRating: string;
   reviewCount: number;
+  vendor: mongoose.Types.ObjectId;
+  store: mongoose.Types.ObjectId;
   // NEW
 }
 
@@ -79,6 +80,11 @@ const ProductSchema = new Schema<IProduct>(
     vendor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Vendor",
+      index: true,
+    },
+    store: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
       index: true,
     },
     createdBy: {

@@ -1,5 +1,11 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
-
+export const STORE_STATUS = [
+  "pending",
+  "approved",
+  "rejected",
+  "suspended",
+] as const;
+export type STORE_STATUS_TYPE = (typeof STORE_STATUS)[number];
 // Optional: Create an interface for better TypeScript support
 export interface IStore extends Document {
   vendor: mongoose.Types.ObjectId;
@@ -8,7 +14,7 @@ export interface IStore extends Document {
   logo?: string;
   banner?: string;
   description?: string;
-  status: "pending" | "approved" | "rejected" | "suspended";
+  status: STORE_STATUS_TYPE;
   policies: {
     shipping?: string;
     returns?: string;
@@ -62,7 +68,7 @@ const StoreSchema = new Schema<IStore>(
 
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected", "suspended"],
+      enum: STORE_STATUS,
       default: "pending",
       index: true, // useful when filtering active stores
     },

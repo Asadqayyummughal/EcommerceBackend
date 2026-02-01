@@ -20,6 +20,8 @@ import rolesRoutes from "./admin/routes/role.routes";
 import adminUsersRoutes from "./admin/routes/users.routes";
 import vendorRoutes from "./vendor/routes/vendor.routes";
 import vendorProductRoutes from "./vendor/routes/vendor-product.routes";
+import vendorStoreRoutes from "./vendor/routes/store.routes";
+
 const app: Application = express();
 // webhook routes
 app.use("/api/webhook", webhookRoutes);
@@ -55,4 +57,6 @@ app.use("/api/review", reviewRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/vendor", vendorRoutes);
 app.use("/api/vendor/products", vendorProductRoutes);
+app.use("/api/vendor/store", vendorStoreRoutes);
+
 export default app;

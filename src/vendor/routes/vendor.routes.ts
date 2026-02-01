@@ -14,5 +14,7 @@ router.put(
   vendorController.approveVendor,
 ); // approveVenodor
 
-router.post("/product/");
+// router.post("/product/");
 export default router;
+
+//GET /store/:slug
