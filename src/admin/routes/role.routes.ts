@@ -14,13 +14,13 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  requirePermission("role.manage"),
+  // requirePermission("role.manage"),
   rolesController.listRoles,
 );
 router.put(
   "/assignRole",
   authMiddleware,
-  requirePermission("role.manage"),
+  // requirePermission("role.manage"),
   rolesController.assignRoleToUser,
 );
 router.get(

@@ -1,8 +1,9 @@
 import { Vendor } from "../../models/vendor.model";
 import User from "../../models/user.model";
 import Role from "../../models/role.model";
-export const applyVendor = async (userId: string) => {
-  let user = await User.findById(userId);
+export const applyForVendor = async (userId: string) => {
+  //check here if venore role exist or not
+  let user = await User.findById(userId); //69809c2a09c9a53278e149f5
   const existing = await Vendor.findOne({ user: userId });
   if (existing) {
     throw new Error("Vendor already exists");

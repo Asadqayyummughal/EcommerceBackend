@@ -11,11 +11,11 @@ router.post(
   storeController.createStore,
 );
 router.patch(
-  "/api/vendor/store",
+  "/:id/approve",
   authMiddleware,
   //required permission necessary
   //requireVendorApproved("vendor"),
-  storeController.createStore,
+  storeController.approveStore,
 );
 // auth
 // requireRole("vendor")

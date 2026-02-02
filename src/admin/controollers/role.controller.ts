@@ -33,8 +33,8 @@ export const listRoles = async (req: Request, res: Response) => {
 };
 
 export const assignRoleToUser = async (req: Request, res: Response) => {
-  const roleId = req.body.roleId;
-  let user = await rolesService.assignRoleToUser(roleId, req.user.id);
+  const { roleId, userId } = req.body.roleId;
+  let user = await rolesService.assignRoleToUser(roleId, userId);
   res.json(user);
 };
 

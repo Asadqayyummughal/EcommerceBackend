@@ -5,10 +5,10 @@ import path from "path";
 
 export const getProfile = async (userId: string) => {
   const user = await User.findById(userId)
-    .select("-password")
+    .select("-password ")
     .populate({
       path: "role",
-      select: "-createdAt  -updatedAt ", // exclude createdAt from the populated Role
+      select: "-createdAt  -updatedAt -refreshTokens ", // exclude createdAt from the populated Role
       populate: {
         path: "permissions", // ← nested populate
         select: "key module", // or whatever fields you need (or omit to get all)
