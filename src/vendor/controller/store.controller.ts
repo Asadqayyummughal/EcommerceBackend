@@ -29,3 +29,17 @@ export const approveStore = async (req: Request, res: Response) => {
     });
   }
 };
+export const listStores = async (req: Request, res: Response) => {
+  try {
+    let stores = await storeService.listAllStores();
+    res.status(200).json({
+      success: true,
+      data: stores,
+    });
+  } catch (Error: any) {
+    res.status(400).json({
+      success: true,
+      Error: Error.message,
+    });
+  }
+};

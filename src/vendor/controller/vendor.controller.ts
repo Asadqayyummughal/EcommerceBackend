@@ -3,7 +3,7 @@ import * as VendorController from "../services/vendor.service";
 export const applyVendor = async (req: Request, res: Response) => {
   try {
     let userId = req.user.id;
-    let vendor = await VendorController.applyVendor(userId);
+    let vendor = await VendorController.applyForVendor(userId);
     res.status(200).json({
       success: true,
       data: vendor,
@@ -33,6 +33,7 @@ export const getVendorsByStatus = async (req: Request, res: Response) => {
 };
 export const approveVendor = async (req: Request, res: Response) => {
   try {
+    debugger;
     let vendor = await VendorController.approveVendor(
       req.params.vendorId,
       req.user.id,

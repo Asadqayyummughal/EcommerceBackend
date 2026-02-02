@@ -17,6 +17,15 @@ router.patch(
   //requireVendorApproved("vendor"),
   storeController.approveStore,
 );
+
+router.get(
+  "/",
+  authMiddleware,
+  //required permission necessary
+  //requireVendorApproved("vendor"),
+  storeController.listStores,
+);
+
 // auth
 // requireRole("vendor")
 // requireVendorApproved

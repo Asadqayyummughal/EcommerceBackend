@@ -13,6 +13,7 @@ export interface IStore extends Document {
   slug: string;
   logo?: string;
   banner?: string;
+  updatedBy?: mongoose.Types.ObjectId;
   description?: string;
   status: STORE_STATUS_TYPE;
   policies: {
@@ -33,7 +34,11 @@ const StoreSchema = new Schema<IStore>(
       required: true,
       unique: true, // one store per vendor
     },
-
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "Vendor",
+      unique: true,
+    },
     name: {
       type: String,
       required: [true, "Store name is required"],
