@@ -70,7 +70,6 @@ const StoreSchema = new Schema<IStore>(
       maxlength: [2000, "Description cannot exceed 2000 characters"],
       default: null,
     },
-
     status: {
       type: String,
       enum: STORE_STATUS,

@@ -29,7 +29,7 @@ export const checkoutOrder = async (
     paymentMethod: "cod" | "stripe" | "paypal";
     shippingAddress: any;
     couponCode: string;
-  }
+  },
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -44,7 +44,7 @@ export const checkoutOrder = async (
       let price = product.salePrice ?? product.price;
       if (item.variantSku) {
         const variant = product.variants?.find(
-          (v) => v.sku === item.variantSku
+          (v) => v.sku === item.variantSku,
         );
         if (!variant) throw new Error("Variant not found");
         const available = variant.stock - (variant.reservedStock ?? 0);
@@ -111,14 +111,14 @@ export const checkoutOrder = async (
             : undefined,
         },
       ],
-      { session }
+      { session },
     );
 
     if (coupon) {
       await Coupon.updateOne(
         { _id: coupon._id },
         { $inc: { usedCount: 1 } },
-        { session }
+        { session },
       );
 
       await CouponUsage.create(
@@ -130,7 +130,7 @@ export const checkoutOrder = async (
             usedAt: new Date(),
           },
         ],
-        { session }
+        { session },
       );
     }
 
@@ -184,7 +184,7 @@ export const cancelOrder = async (userId: string, orderId: string) => {
     if (order.paymentStatus === "paid") {
       await refundStripePayment(
         order.stripePaymentIntentId,
-        order._id.toString()
+        order._id.toString(),
       );
 
       order.paymentStatus = "refunded";
@@ -207,7 +207,7 @@ export const cancelOrder = async (userId: string, orderId: string) => {
 export const updateOrderStatus = async (
   orderId: string,
   newStatus: OrderStatus,
-  userId: string
+  userId: string,
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -221,7 +221,7 @@ export const updateOrderStatus = async (
 
     if (!allowedNextStatuses.includes(newStatus)) {
       throw new Error(
-        `Invalid status transition: ${order.status} → ${newStatus}`
+        `Invalid status transition: ${order.status} → ${newStatus}`,
       );
     }
 
@@ -237,7 +237,7 @@ export const updateOrderStatus = async (
         await Coupon.updateOne(
           { code: order.coupon.code },
           { $inc: { usedCount: -1 } },
-          { session }
+          { session },
         );
 
         await CouponUsage.deleteOne({ order: order._id }).session(session);
@@ -262,6 +262,13 @@ export const updateOrderStatus = async (
     session.endSession();
     throw error;
   }
+
+  //on delivered
+  //await creditVendorWallet(order);
+  //await createCommissionEntry(order);
+
+  //on cancelled or refund
+  //await createCommissionEntry(order);
 };
 
 export const getOrderTracking = async (orderId: string, userId: string) => {
@@ -272,3 +279,40 @@ export const getOrderTracking = async (orderId: string, userId: string) => {
   if (!order) throw new Error("Order not found");
   return order;
 };
+
+export const creditVendorWallet = async (order, session) => {
+  const commissionRate = 0.1; // 10%
+
+  const commission = order.totalAmount * commissionRate;
+  const vendorEarning = order.totalAmount - commission;
+
+  await VendorWallet.updateOne(
+    { vendor: order.vendor },
+    {
+      $inc: {
+        balance: vendorEarning,
+        totalEarned: vendorEarning,
+      },
+    },
+    { upsert: true, session },
+  );
+
+  await Commission.create(
+    [
+      {
+        vendor: order.vendor,
+        order: order._id,
+        orderAmount: order.totalAmount,
+        commissionAmount: commission,
+        vendorEarning,
+      },
+    ],
+    { session },
+  );
+};
+
+//rerund hanldling logic
+// await VendorWallet.updateOne(
+//   { vendor: order.vendor },
+//   { $inc: { balance: -vendorEarning } }
+// );

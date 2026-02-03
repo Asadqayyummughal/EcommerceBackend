@@ -1,6 +1,7 @@
 import { Vendor } from "../../models/vendor.model";
 import User from "../../models/user.model";
 import Role from "../../models/role.model";
+import Order from "../../models/order.model";
 export const applyForVendor = async (userId: string) => {
   //check here if venore role exist or not
   let user = await User.findById(userId); //69809c2a09c9a53278e149f5
@@ -38,4 +39,23 @@ export const approveVendor = async (vendorId: string, userId: string) => {
     { role: vendorRole._id },
   );
   return { user, vendor };
+};
+
+export const vedorAnalytics = async (storeId: string) => {
+  const orders = await Order.find({ store: storeId });
+  const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+  return {
+    totalOrders: orders.length,
+    totalRevenue,
+    avgOrderValue: totalRevenue / orders.length,
+  };
+};
+
+export const topProductsAnlaytics = async () => {
+  //   $unwind: "$items"
+  // $group: {
+  //   _id: "$items.product",
+  //   totalSold: { $sum: "$items.quantity" },
+  //   revenue: { $sum: "$items.subtotal" }
+  // }
 };

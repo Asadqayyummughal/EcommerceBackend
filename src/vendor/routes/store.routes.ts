@@ -1,11 +1,14 @@
 import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware";
 import * as storeController from "../controller/store.controller";
+import { requireActiveVendor } from "../../middlewares/vendor.middleware";
+import { isAdmin } from "../../middlewares/admin.middleware";
 const router = Router();
 // POST /api/vendor/store
 router.post(
   "/",
   authMiddleware,
+  requireActiveVendor,
   //required permission necessary
   //  requireVendorApproved("vendor"),
   storeController.createStore,
@@ -13,22 +16,17 @@ router.post(
 router.patch(
   "/:id/approve",
   authMiddleware,
-  //required permission necessary
-  //requireVendorApproved("vendor"),
+  isAdmin,
   storeController.approveStore,
 );
 
-router.get(
-  "/",
-  authMiddleware,
-  //required permission necessary
-  //requireVendorApproved("vendor"),
-  storeController.listStores,
-);
+router.get("/", authMiddleware, isAdmin, storeController.listStores);
 
-// auth
-// requireRole("vendor")
-// requireVendorApproved
-// PATCH /api/admin/stores/:id/approve
+router.put(
+  "/:id",
+  authMiddleware,
+  requireActiveVendor,
+  storeController.updateStore,
+);
 
 export default router;

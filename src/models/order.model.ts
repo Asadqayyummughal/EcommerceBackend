@@ -127,7 +127,9 @@ const OrderSchema = new Schema<IOrder>(
       discountAmount: Number,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+OrderSchema.index({ store: 1, createdAt: -1 });
+OrderSchema.index({ "items.product": 1 });
 
 export default mongoose.model<IOrder>("Order", OrderSchema);

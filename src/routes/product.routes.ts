@@ -16,7 +16,7 @@ router.post(
   //   roleMiddleware,
   uploadMiddleware.array("images", 6),
   validate(createProductSchema),
-  productControllers.createProduct
+  productControllers.createProduct,
 );
 router.get("/", authMiddleware, productControllers.listProducts);
 
@@ -26,20 +26,26 @@ router.patch(
   //   roleMiddleware,
   uploadMiddleware.array("images", 6),
   validate(updateProductSchema),
-  productControllers.updateProduct
+  productControllers.updateProduct,
 );
 
 router.delete(
   "/:id",
   authMiddleware,
   //roleMiddleware
-  productControllers.deleteProduct
+  productControllers.deleteProduct,
 );
 router.get(
   "/:id",
   authMiddleware,
   //   roleMiddleware
-  productControllers.getProduct
+  productControllers.getProduct,
+);
+router.get(
+  "/:vendorId/store",
+  authMiddleware,
+  //   roleMiddleware
+  productControllers.listVendorProducts,
 );
 
 export default router;

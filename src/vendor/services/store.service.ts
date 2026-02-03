@@ -55,26 +55,16 @@ export const updateStore = async (
   storeId: string,
   updateData: Partial<IStore>, // better than passing whole IStore
 ) => {
-  // 1. Find vendor (you can optimize this query later)
   const vendor = await Vendor.findOne({ user: userId });
   if (!vendor) {
     throw new Error("Vendor not found for this user");
   }
-
-  // 2. Verify store exists + belongs to this vendor
   const store = await Store.findOne({ _id: storeId, vendor: vendor._id });
   if (!store) {
     throw new Error("Store not found or does not belong to you");
   }
-
   // 3. Add updatedBy
-  updateData.updatedBy = vendor.user; // assuming vendor.user is ObjectId of User
-
-  // Optional: protect some fields from direct update
-  // delete updateData.status;           // if only admin can change status
-  // delete updateData.vendor;
-
-  // 4. Update (use Partial + $set internally)
+  updateData.updatedBy = vendor.user;
   const updated = await Store.findByIdAndUpdate(
     storeId,
     { $set: updateData },

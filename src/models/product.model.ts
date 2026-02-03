@@ -100,8 +100,10 @@ ProductSchema.index({ title: "text", description: "text", tags: "text" });
 // Compound indexes for common sorting/filtering
 ProductSchema.index({ price: 1 });
 ProductSchema.index({ createdAt: -1 });
+ProductSchema.index({ store: 1 });
 const Product: Model<IProduct> = mongoose.model<IProduct>(
   "Product",
   ProductSchema,
 );
+
 export default Product;

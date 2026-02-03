@@ -17,7 +17,7 @@ export const createStore = async (req: Request, res: Response) => {
 
 export const approveStore = async (req: Request, res: Response) => {
   try {
-    let store = await storeService.approveStore(req.params.id, req.body);
+    let store = await storeService.approveStore(req.params.id, req.body.status);
     res.status(200).json({
       success: true,
       data: store,
@@ -38,7 +38,26 @@ export const listStores = async (req: Request, res: Response) => {
     });
   } catch (Error: any) {
     res.status(400).json({
+      success: false,
+      Error: Error.message,
+    });
+  }
+};
+
+export const updateStore = async (req: Request, res: Response) => {
+  try {
+    let store = await storeService.updateStore(
+      req.user.id,
+      req.params.id,
+      req.body,
+    );
+    res.status(201).json({
       success: true,
+      data: store,
+    });
+  } catch (Error: any) {
+    res.status(400).json({
+      success: false,
       Error: Error.message,
     });
   }

@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import * as productService from "../services/product.service";
-import mongoose, { Types } from "mongoose";
 import { toObjectId } from "../utils/helpers.utils";
 
 export const createProduct = async (req: Request, res: Response) => {
@@ -74,6 +73,21 @@ export const deleteProduct = async (req: Request, res: Response) => {
     const id = req.params.id;
     await productService.deleteProductService(id);
     return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const listVendorProducts = async (req: Request, res: Response) => {
+  try {
+    debugger;
+    let products = await productService.getVendorStoreProducts(
+      req.params.vendorId,
+    );
+    return res.json({
+      success: true,
+      products: products,
+    });
   } catch (err: any) {
     return res.status(400).json({ success: false, message: err.message });
   }

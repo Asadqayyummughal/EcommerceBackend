@@ -20,6 +20,7 @@ export const createProductService = async (payload: Partial<IProduct>) => {
     status: "active",
   });
   if (!vendor) throw new Error("vendor not exist");
+  debugger;
   const store = await Store.findOne({
     vendor: vendor?._id,
     status: "approved",
@@ -106,7 +107,7 @@ export const deleteProductService = async (id: string) => {
   return true;
 };
 
-export const getProductsByStore = async (vendorId: string) => {
+export const getVendorStoreProducts = async (vendorId: string) => {
   let store = await Store.findOne({ vendor: vendorId });
   if (!store) throw new Error("Store does not exist");
   return await Product.find({

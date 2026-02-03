@@ -16,7 +16,7 @@ router.put(
   "/:id/status",
   authMiddleware,
   //   roleMiddleware(["admin"]),
-  orderController.updateOrderStatus
+  orderController.updateOrderStatus,
 );
 
 export default router;
