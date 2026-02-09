@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IOrderItem {
   product: mongoose.Types.ObjectId;
+
   variantSku?: string;
   title: string;
   price: number; // snapshot price

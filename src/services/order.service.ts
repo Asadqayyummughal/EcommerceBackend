@@ -1,7 +1,7 @@
 import Cart from "../models/cart.model";
 import Product from "../models/product.model";
-import Order, { OrderStatus } from "../models/order.model";
-import mongoose from "mongoose";
+import Order, { IOrder, OrderStatus } from "../models/order.model";
+import mongoose, { ClientSession } from "mongoose";
 import { AuthUser } from "../types/express";
 import { refundStripePayment } from "./refund-stripe.service";
 import { restoreInventory } from "../utils/restore-inventory";
@@ -11,6 +11,9 @@ import { getEligibleItems } from "./couponEligibility";
 import { calculateDiscount } from "./couponCalculator";
 import { Coupon } from "../models/coupon.model";
 import { CouponUsage } from "../models/couponUsage.model";
+import { Session } from "inspector";
+import { VendorWallet } from "../models/vendorWallet.model";
+import { Commission } from "../models/commission.model";
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ["paid", "cancelled"],
@@ -211,11 +214,9 @@ export const updateOrderStatus = async (
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-
   try {
     const order = await Order.findById(orderId).session(session);
     if (!order) throw new Error("Order not found");
-
     const allowedNextStatuses =
       ALLOWED_TRANSITIONS[order.status as OrderStatus] || [];
 
@@ -224,10 +225,8 @@ export const updateOrderStatus = async (
         `Invalid status transition: ${order.status} → ${newStatus}`,
       );
     }
-
     // 🔁 Restore inventory ONLY on cancellation-like states
     const restoreStates: OrderStatus[] = ["cancelled", "failed", "expired"];
-
     if (
       restoreStates.includes(newStatus) &&
       !restoreStates.includes(order.status)
@@ -247,25 +246,22 @@ export const updateOrderStatus = async (
     order.status = newStatus;
 
     await order.save({ session });
-
     await session.commitTransaction();
-    session.endSession();
-
     appEventEmitter.emit("order.status.changed", {
       orderId,
       newStatus,
       userId,
     });
+    if (order.status == "delivered") {
+      this.creditVendorWallet(order, session);
+    }
+    session.endSession();
     return order;
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
     throw error;
   }
-
-  //on delivered
-  //await creditVendorWallet(order);
-  //await createCommissionEntry(order);
 
   //on cancelled or refund
   //await createCommissionEntry(order);
@@ -280,12 +276,13 @@ export const getOrderTracking = async (orderId: string, userId: string) => {
   return order;
 };
 
-export const creditVendorWallet = async (order, session) => {
+export const creditVendorWallet = async (
+  order: IOrder,
+  session: ClientSession,
+) => {
   const commissionRate = 0.1; // 10%
-
   const commission = order.totalAmount * commissionRate;
   const vendorEarning = order.totalAmount - commission;
-
   await VendorWallet.updateOne(
     { vendor: order.vendor },
     {

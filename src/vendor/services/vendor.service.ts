@@ -2,6 +2,7 @@ import { Vendor } from "../../models/vendor.model";
 import User from "../../models/user.model";
 import Role from "../../models/role.model";
 import Order from "../../models/order.model";
+import { VendorWallet } from "../../models/vendorWallet.model";
 export const applyForVendor = async (userId: string) => {
   //check here if venore role exist or not
   let user = await User.findById(userId); //69809c2a09c9a53278e149f5
@@ -30,6 +31,7 @@ export const approveVendor = async (vendorId: string, userId: string) => {
   if (!vendor) throw new Error("Vendor Does not exist");
   const vendorRole = await Role.findOne({ name: "vendor" });
   if (!vendorRole) throw new Error("Vendor role not configured");
+
   vendor.status = "active";
   vendor.approvedAt = new Date();
   vendor.approvedBy = userId;
@@ -38,6 +40,14 @@ export const approveVendor = async (vendorId: string, userId: string) => {
     { _id: vendor.user },
     { role: vendorRole._id },
   );
+  await VendorWallet.create([
+    {
+      vendor: vendor._id,
+      balance: 0,
+      pendingBalance: 0,
+      totalEarned: 0,
+    },
+  ]);
   return { user, vendor };
 };
 
