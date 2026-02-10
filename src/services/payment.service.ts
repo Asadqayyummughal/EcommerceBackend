@@ -7,11 +7,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export const createStripePaymentIntent = async (orderId: string) => {
   const order = await Order.findById(orderId);
   if (!order) throw new Error("Order not found");
-
   if (order.paymentStatus === "paid") {
     throw new Error("Order already paid");
   }
-
   const paymentIntent = await stripe.paymentIntents.create({
     amount: Math.round(order.totalAmount * 100), // cents
     currency: "usd",
@@ -32,7 +30,7 @@ export const createStripePaymentIntent = async (orderId: string) => {
 
 export const confirmPayment = async (
   paymentIntentId: string,
-  payment_method: any
+  payment_method: any,
 ) => {
   try {
     // const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {

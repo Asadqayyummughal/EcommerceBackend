@@ -2,12 +2,12 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IOrderItem {
   product: mongoose.Types.ObjectId;
-
   variantSku?: string;
   title: string;
   price: number; // snapshot price
   quantity: number;
   subtotal: number;
+  vendor: mongoose.Types.ObjectId;
 }
 export interface IShipment {
   carrier: string;
@@ -58,6 +58,7 @@ export interface IOrder extends Document {
     country: string;
     zip: string;
   };
+
   shipment: IShipment;
   orderEvents: IOrderEvent[];
   coupon: ICoupon;
@@ -69,6 +70,7 @@ const OrderSchema = new Schema<IOrder>(
     items: [
       {
         product: { type: Schema.Types.ObjectId, ref: "Product" },
+        vendor: { type: Schema.Types.ObjectId, ref: "Vendor" },
         variantSku: String,
         title: String,
         price: Number,

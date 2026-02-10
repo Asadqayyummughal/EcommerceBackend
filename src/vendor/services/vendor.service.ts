@@ -31,7 +31,6 @@ export const approveVendor = async (vendorId: string, userId: string) => {
   if (!vendor) throw new Error("Vendor Does not exist");
   const vendorRole = await Role.findOne({ name: "vendor" });
   if (!vendorRole) throw new Error("Vendor role not configured");
-
   vendor.status = "active";
   vendor.approvedAt = new Date();
   vendor.approvedBy = userId;
@@ -40,14 +39,18 @@ export const approveVendor = async (vendorId: string, userId: string) => {
     { _id: vendor.user },
     { role: vendorRole._id },
   );
-  await VendorWallet.create([
-    {
-      vendor: vendor._id,
-      balance: 0,
-      pendingBalance: 0,
-      totalEarned: 0,
-    },
-  ]);
+  const existingWallet = await VendorWallet.findOne({ vendor: vendor._id });
+  if (!existingWallet) {
+    await VendorWallet.create([
+      {
+        vendor: vendor._id,
+        balance: 0,
+        pendingBalance: 0,
+        totalEarned: 0,
+      },
+    ]);
+  }
+
   return { user, vendor };
 };
 

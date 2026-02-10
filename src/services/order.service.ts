@@ -1,6 +1,6 @@
 import Cart from "../models/cart.model";
 import Product from "../models/product.model";
-import Order, { IOrder, OrderStatus } from "../models/order.model";
+import Order, { IOrder, IOrderItem, OrderStatus } from "../models/order.model";
 import mongoose, { ClientSession } from "mongoose";
 import { AuthUser } from "../types/express";
 import { refundStripePayment } from "./refund-stripe.service";
@@ -11,7 +11,6 @@ import { getEligibleItems } from "./couponEligibility";
 import { calculateDiscount } from "./couponCalculator";
 import { Coupon } from "../models/coupon.model";
 import { CouponUsage } from "../models/couponUsage.model";
-import { Session } from "inspector";
 import { VendorWallet } from "../models/vendorWallet.model";
 import { Commission } from "../models/commission.model";
 
@@ -39,7 +38,7 @@ export const checkoutOrder = async (
   try {
     const cart = await Cart.findOne({ user: userId }).session(session); //user cart
     if (!cart || cart.items.length === 0) throw new Error("Cart is empty"); //validate cart
-    const orderItems = [];
+    const orderItems: IOrderItem[] = [];
     let subtotal = 0;
     for (const item of cart.items) {
       const product = await Product.findById(item.product).session(session);
@@ -63,14 +62,12 @@ export const checkoutOrder = async (
         }
         product.reservedStock = (product.reservedStock ?? 0) + item.quantity;
       }
-
       await product.save({ session });
-
       const itemSubtotal = price * item.quantity;
       subtotal += itemSubtotal;
-
       orderItems.push({
         product: product._id,
+        vendor: product.vendor,
         variantSku: item.variantSku,
         title: product.title,
         price,
@@ -93,7 +90,6 @@ export const checkoutOrder = async (
       discountAmount = discountData.discount;
       totalAmount -= discountAmount;
     }
-
     const order = await Order.create(
       [
         {
@@ -116,7 +112,6 @@ export const checkoutOrder = async (
       ],
       { session },
     );
-
     if (coupon) {
       await Coupon.updateOne(
         { _id: coupon._id },
@@ -198,7 +193,6 @@ export const cancelOrder = async (userId: string, orderId: string) => {
     await order.save({ session });
     await session.commitTransaction();
     session.endSession();
-
     return order;
   } catch (error) {
     await session.abortTransaction();
@@ -219,7 +213,6 @@ export const updateOrderStatus = async (
     if (!order) throw new Error("Order not found");
     const allowedNextStatuses =
       ALLOWED_TRANSITIONS[order.status as OrderStatus] || [];
-
     if (!allowedNextStatuses.includes(newStatus)) {
       throw new Error(
         `Invalid status transition: ${order.status} → ${newStatus}`,
@@ -238,13 +231,10 @@ export const updateOrderStatus = async (
           { $inc: { usedCount: -1 } },
           { session },
         );
-
         await CouponUsage.deleteOne({ order: order._id }).session(session);
       }
     }
-
     order.status = newStatus;
-
     await order.save({ session });
     await session.commitTransaction();
     appEventEmitter.emit("order.status.changed", {
@@ -253,7 +243,7 @@ export const updateOrderStatus = async (
       userId,
     });
     if (order.status == "delivered") {
-      this.creditVendorWallet(order, session);
+      creditVendorWallet(order, session);
     }
     session.endSession();
     return order;
@@ -262,9 +252,6 @@ export const updateOrderStatus = async (
     session.endSession();
     throw error;
   }
-
-  //on cancelled or refund
-  //await createCommissionEntry(order);
 };
 
 export const getOrderTracking = async (orderId: string, userId: string) => {
@@ -280,33 +267,50 @@ export const creditVendorWallet = async (
   order: IOrder,
   session: ClientSession,
 ) => {
-  const commissionRate = 0.1; // 10%
-  const commission = order.totalAmount * commissionRate;
-  const vendorEarning = order.totalAmount - commission;
-  await VendorWallet.updateOne(
-    { vendor: order.vendor },
-    {
-      $inc: {
-        balance: vendorEarning,
-        totalEarned: vendorEarning,
-      },
-    },
-    { upsert: true, session },
-  );
-
-  await Commission.create(
-    [
+  const commissionRate = Number(process.env.PLATFORM_COMMISSION || 0.1);
+  const vendorTotals = calculateVendorTotals(order);
+  debugger;
+  for (const [vendorId, vendorGross] of vendorTotals.entries()) {
+    const commissionAmount = vendorGross * commissionRate;
+    const vendorEarning = vendorGross - commissionAmount;
+    // 1️⃣ Credit vendor wallet
+    await VendorWallet.updateOne(
+      { vendor: vendorId },
       {
-        vendor: order.vendor,
-        order: order._id,
-        orderAmount: order.totalAmount,
-        commissionAmount: commission,
-        vendorEarning,
+        $inc: {
+          balance: vendorEarning,
+          totalEarned: vendorEarning,
+        },
       },
-    ],
-    { session },
-  );
+      { upsert: true, session },
+    );
+
+    // 2️⃣ Store commission record (ledger)
+    await Commission.create(
+      [
+        {
+          vendor: vendorId,
+          order: order._id,
+          orderAmount: vendorGross,
+          commissionAmount,
+          vendorEarning,
+          status: "earned", // useful for refunds later
+        },
+      ],
+      { session },
+    );
+  }
 };
+
+function calculateVendorTotals(order: IOrder) {
+  const map = new Map<string, number>();
+  for (const item of order.items) {
+    const vendorId = item.vendor.toString();
+    map.set(vendorId, (map.get(vendorId) ?? 0) + item.subtotal);
+  }
+
+  return map;
+}
 
 //rerund hanldling logic
 // await VendorWallet.updateOne(
