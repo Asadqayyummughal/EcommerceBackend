@@ -207,10 +207,12 @@ export const updateOrderStatus = async (
   userId: string,
 ) => {
   const session = await mongoose.startSession();
-  session.startTransaction();
   try {
+    session.startTransaction();
+
     const order = await Order.findById(orderId).session(session);
     if (!order) throw new Error("Order not found");
+
     const allowedNextStatuses =
       ALLOWED_TRANSITIONS[order.status as OrderStatus] || [];
     if (!allowedNextStatuses.includes(newStatus)) {
@@ -218,7 +220,8 @@ export const updateOrderStatus = async (
         `Invalid status transition: ${order.status} → ${newStatus}`,
       );
     }
-    // 🔁 Restore inventory ONLY on cancellation-like states
+
+    // Restore inventory if needed
     const restoreStates: OrderStatus[] = ["cancelled", "failed", "expired"];
     if (
       restoreStates.includes(newStatus) &&
@@ -234,23 +237,30 @@ export const updateOrderStatus = async (
         await CouponUsage.deleteOne({ order: order._id }).session(session);
       }
     }
+    // Update status in memory
     order.status = newStatus;
+    // Save the order FIRST → persist status change
     await order.save({ session });
-    await session.commitTransaction();
+    // Now safe to emit event and credit wallet (order is persisted)
     appEventEmitter.emit("order.status.changed", {
       orderId,
       newStatus,
       userId,
     });
-    if (order.status == "delivered") {
-      creditVendorWallet(order, session);
+
+    if (newStatus === "delivered") {
+      // ← use newStatus, not order.status (more predictable)
+      await creditVendorWallet(order, session);
     }
-    session.endSession();
+
+    await session.commitTransaction();
+
     return order;
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
     throw error;
+  } finally {
+    session.endSession();
   }
 };
 
@@ -269,7 +279,6 @@ export const creditVendorWallet = async (
 ) => {
   const commissionRate = Number(process.env.PLATFORM_COMMISSION || 0.1);
   const vendorTotals = calculateVendorTotals(order);
-  debugger;
   for (const [vendorId, vendorGross] of vendorTotals.entries()) {
     const commissionAmount = vendorGross * commissionRate;
     const vendorEarning = vendorGross - commissionAmount;
@@ -293,8 +302,9 @@ export const creditVendorWallet = async (
           order: order._id,
           orderAmount: vendorGross,
           commissionAmount,
+          commissionRate,
           vendorEarning,
-          status: "earned", // useful for refunds later
+          status: "pending", // useful for refunds later
         },
       ],
       { session },

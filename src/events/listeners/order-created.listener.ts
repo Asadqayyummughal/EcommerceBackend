@@ -11,9 +11,6 @@ appEventEmitter.on("order.placed", async ({ orderId, userId }) => {
     userName: user.name,
     order,
   });
-  debugger;
-  console.log("checkout user name===>", user.email);
-  console.log("checkout order=====>", order);
   if (!user?.email) return;
   await sendEmail(user.email, `Order ${order.status.toUpperCase()}`, html);
 });

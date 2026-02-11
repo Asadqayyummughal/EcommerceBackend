@@ -3,6 +3,8 @@ import User from "../../models/user.model";
 import Role from "../../models/role.model";
 import Order from "../../models/order.model";
 import { VendorWallet } from "../../models/vendorWallet.model";
+import mongoose from "mongoose";
+import { IPayout, Payout } from "../../models/payout.model";
 export const applyForVendor = async (userId: string) => {
   //check here if venore role exist or not
   let user = await User.findById(userId); //69809c2a09c9a53278e149f5
@@ -45,7 +47,7 @@ export const approveVendor = async (vendorId: string, userId: string) => {
       {
         vendor: vendor._id,
         balance: 0,
-        pendingBalance: 0,
+        lockedBalance: 0,
         totalEarned: 0,
       },
     ]);
@@ -63,6 +65,43 @@ export const vedorAnalytics = async (storeId: string) => {
     avgOrderValue: totalRevenue / orders.length,
   };
 };
+export const requestPayout = async (body: IPayout, vendorId: string) => {
+  const { amount, method, payoutDetails } = body;
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const wallet = await VendorWallet.findOne({ vendor: vendorId }).session(
+      session,
+    );
+    if (!wallet || wallet.balance < amount) {
+      throw new Error("Wallet does not exist or Insufficient wallet balance");
+    }
+    // 🔒 Lock funds
+    wallet.balance -= amount;
+    wallet.lockedBalance += amount;
+    await wallet.save({ session });
+    const payout = await Payout.create(
+      [
+        {
+          vendor: vendorId,
+          amount,
+          method,
+          payoutDetails,
+          requestedAt: new Date(),
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+    return payout[0];
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
+  }
+};
 
 export const topProductsAnlaytics = async () => {
   //   $unwind: "$items"
@@ -72,3 +111,11 @@ export const topProductsAnlaytics = async () => {
   //   revenue: { $sum: "$items.subtotal" }
   // }
 };
+
+// export const approvePayout = async (payoutId: string) => {
+//   return await Payout.findByIdAndUpdate(
+//     payoutId,
+//     { status: "approved" },
+//     { new: true }
+//   );
+// };

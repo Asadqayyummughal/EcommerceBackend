@@ -20,7 +20,6 @@ export const createProductService = async (payload: Partial<IProduct>) => {
     status: "active",
   });
   if (!vendor) throw new Error("vendor not exist");
-  debugger;
   const store = await Store.findOne({
     vendor: vendor?._id,
     status: "approved",
@@ -49,7 +48,7 @@ export const listProductsService = async (opts: ProductQueryOptions) => {
 
   const filter: any = {
     isActive: true,
-    status: "approved",
+    // status: "approved",
   };
   if (opts.isActive !== undefined) filter.isActive = opts.isActive;
   if (opts.minPrice !== undefined || opts.maxPrice !== undefined) {

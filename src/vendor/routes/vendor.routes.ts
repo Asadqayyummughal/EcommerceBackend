@@ -17,6 +17,8 @@ router.put(
   isAdmin,
   vendorController.approveVendor,
 ); // approveVenodor
+router.post("/payouts/request", authMiddleware, vendorController.requestPayout);
+// /vendor/payouts/request
 export default router;
 
 // Remaining

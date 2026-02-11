@@ -17,9 +17,15 @@ const payoutSchema = new Schema(
       enum: ["stripe", "manual", "bank", "paypal"], // you can extend later
       required: true,
     },
+    payoutDetails: {
+      bankName: String,
+      accountNumber: String,
+      iban: String,
+      paypalEmail: String,
+    },
     status: {
       type: String,
-      enum: ["requested", "approved", "paid", "failed", "cancelled"],
+      enum: ["pending", "approved", "processing", "paid", "rejected", "failed"],
       default: "requested",
       index: true,
     },
@@ -32,7 +38,8 @@ const payoutSchema = new Schema(
       sparse: true,
     },
     // requestedByIp?: String,   // optional audit field
-    // processedAt?: Date,
+    //processedAt?: Date,
+    requestedAt: Date,
   },
   {
     timestamps: true,
@@ -48,6 +55,12 @@ export interface IPayout {
   vendor: Types.ObjectId;
   amount: number;
   method: "stripe" | "manual" | "bank" | "paypal";
+  payoutDetails: {
+    bankName: string;
+    accountNumber: string;
+    iban: string;
+    paypalEmail: string;
+  };
   status: "requested" | "approved" | "paid" | "failed" | "cancelled";
   transactionId?: string;
   failureReason?: string;
@@ -55,6 +68,7 @@ export interface IPayout {
   processedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+  requestedAt: Date;
 }
 
 export interface IPayoutDocument extends IPayout, Document {}

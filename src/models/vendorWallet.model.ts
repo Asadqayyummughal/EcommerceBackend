@@ -13,7 +13,7 @@ const vendorWalletSchema = new Schema(
       default: 0,
       min: 0,
     },
-    pendingBalance: {
+    lockedBalance: {
       type: Number,
       default: 0,
       min: 0,
@@ -36,7 +36,7 @@ export interface IVendorWallet {
   _id: Types.ObjectId;
   vendor: Types.ObjectId;
   balance: number; // available to withdraw
-  pendingBalance: number; // locked (e.g. pending delivery / return window)
+  lockedBalance: number; // locked (e.g. pending delivery / return window)
   totalEarned: number; // lifetime gross earnings before commissions/deductions
   lastPayoutDate?: Date;
   lastPayoutAmount?: number;

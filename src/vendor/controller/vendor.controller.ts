@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import * as VendorController from "../services/vendor.service";
+import * as VendorService from "../services/vendor.service";
 export const applyVendor = async (req: Request, res: Response) => {
   try {
     let userId = req.user.id;
-    let vendor = await VendorController.applyForVendor(userId);
+    let vendor = await VendorService.applyForVendor(userId);
     res.status(200).json({
       success: true,
       data: vendor,
@@ -19,7 +19,7 @@ export const applyVendor = async (req: Request, res: Response) => {
 export const getVendorsByStatus = async (req: Request, res: Response) => {
   try {
     let status = req.body.status || "pending";
-    let vendor = await VendorController.getVendorsByStatus(status);
+    let vendor = await VendorService.getVendorsByStatus(status);
     res.status(200).json({
       success: true,
       data: vendor,
@@ -33,14 +33,27 @@ export const getVendorsByStatus = async (req: Request, res: Response) => {
 };
 export const approveVendor = async (req: Request, res: Response) => {
   try {
-    debugger;
-    let vendor = await VendorController.approveVendor(
+    let vendor = await VendorService.approveVendor(
       req.params.vendorId,
       req.user.id,
     );
     return res.status(201).json({
       success: true,
       data: vendor,
+    });
+  } catch (Error: any) {
+    return res.status(401).json({
+      success: false,
+      message: Error.message,
+    });
+  }
+};
+export const requestPayout = async (req: Request, res: Response) => {
+  try {
+    let payout = await VendorService.requestPayout(req.body, req.body.vendorId);
+    return res.status(201).json({
+      success: true,
+      data: payout,
     });
   } catch (Error: any) {
     return res.status(401).json({
