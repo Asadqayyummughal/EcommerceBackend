@@ -1,4 +1,16 @@
 import { Schema, model, Document, Types } from "mongoose";
+export const PAYOUT_STATUS = [
+  "requested",
+  "approved",
+  "paid",
+  "failed",
+  "cancelled",
+  "rejected",
+] as const;
+export type PayoutStatusType = (typeof PAYOUT_STATUS)[number];
+
+export const PAYMENT_METHOD = ["stripe", "manual", "bank", "paypal"];
+export type PaymentaMethodType = (typeof PAYMENT_METHOD)[number];
 const payoutSchema = new Schema(
   {
     vendor: {
@@ -14,7 +26,7 @@ const payoutSchema = new Schema(
     },
     method: {
       type: String,
-      enum: ["stripe", "manual", "bank", "paypal"], // you can extend later
+      enum: PAYMENT_METHOD, // you can extend later
       required: true,
     },
     payoutDetails: {
@@ -25,7 +37,7 @@ const payoutSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "processing", "paid", "rejected", "failed"],
+      enum: PAYOUT_STATUS,
       default: "requested",
       index: true,
     },
@@ -33,10 +45,13 @@ const payoutSchema = new Schema(
       type: String,
       sparse: true, // e.g. Stripe payout ID
     },
+    stripeTransferId: String,
+    stripePayoutId: String,
     failureReason: {
       type: String,
       sparse: true,
     },
+
     // requestedByIp?: String,   // optional audit field
     //processedAt?: Date,
     requestedAt: Date,
@@ -54,17 +69,19 @@ export interface IPayout {
   _id: Types.ObjectId;
   vendor: Types.ObjectId;
   amount: number;
-  method: "stripe" | "manual" | "bank" | "paypal";
+  method: PaymentaMethodType;
   payoutDetails: {
     bankName: string;
     accountNumber: string;
     iban: string;
     paypalEmail: string;
   };
-  status: "requested" | "approved" | "paid" | "failed" | "cancelled";
+  status: PayoutStatusType;
   transactionId?: string;
   failureReason?: string;
   requestedByIp?: string;
+  stripeTransferId?: string;
+  stripePayoutId?: string;
   processedAt?: Date;
   createdAt: Date;
   updatedAt: Date;

@@ -48,12 +48,55 @@ export const approveVendor = async (req: Request, res: Response) => {
     });
   }
 };
+export const onboardStripe = async (req: Request, res: Response) => {
+  try {
+    let result = await VendorService.enableVendorStripeAccount(req.user.id);
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (Error: any) {
+    return res.status(401).json({
+      success: false,
+      message: Error.message,
+    });
+  }
+};
 export const requestPayout = async (req: Request, res: Response) => {
   try {
     let payout = await VendorService.requestPayout(req.body, req.body.vendorId);
     return res.status(201).json({
       success: true,
       data: payout,
+    });
+  } catch (Error: any) {
+    return res.status(401).json({
+      success: false,
+      message: Error.message,
+    });
+  }
+};
+
+export const approvedPayout = async (req: Request, res: Response) => {
+  try {
+    let payout = await VendorService.approvePayout(req.params.id);
+    return res.status(200).json({
+      success: true,
+      data: payout,
+    });
+  } catch (Error: any) {
+    return res.status(401).json({
+      success: false,
+      message: Error.message,
+    });
+  }
+};
+export const listAllPayouts = async (req: Request, res: Response) => {
+  try {
+    let payouts = await VendorService.listAllPayouts();
+    return res.status(200).json({
+      success: true,
+      data: payouts,
     });
   } catch (Error: any) {
     return res.status(401).json({

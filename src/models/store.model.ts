@@ -38,6 +38,7 @@ const StoreSchema = new Schema<IStore>(
       type: Schema.Types.ObjectId,
       ref: "Vendor",
       unique: true,
+      sparse: true,
     },
     name: {
       type: String,

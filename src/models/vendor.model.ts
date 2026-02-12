@@ -15,6 +15,9 @@ export interface IVendor extends Document {
   phone?: string;
   status: VendorStatusType;
   commissionRate: number;
+  stripeAccountId?: string;
+  stripeOnboarded?: boolean;
+  payoutsEnabled?: boolean;
   approvedAt?: string | Date;
   approvedBy?: string; // ObjectId string (admin)
   createdAt?: string | Date;
@@ -46,6 +49,9 @@ const vendorSchema = new Schema<IVendor>(
       type: Schema.Types.ObjectId,
       ref: "User", // admin
     },
+    stripeAccountId: String,
+    stripeOnboarded: Boolean,
+    payoutsEnabled: Boolean,
   },
   { timestamps: true },
 );

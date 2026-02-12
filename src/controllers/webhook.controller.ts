@@ -1,11 +1,11 @@
 import Stripe from "stripe";
 import Order, { IOrder } from "../models/order.model";
 import mongoose from "mongoose";
-
 import { Request, Response } from "express";
 import { restoreInventory } from "../utils/restore-inventory";
 import { appEventEmitter } from "../events/appEvents";
 import Product from "../models/product.model";
+import { Vendor } from "../models/vendor.model";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
@@ -18,7 +18,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig!,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET!,
     );
   } catch (err) {
     return res.status(400).send(`Webhook Error`);
@@ -55,6 +55,25 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         order.paymentStatus = "failed";
         order.status = "cancelled";
         await order.save({ session });
+      }
+    }
+    if (event.type === "account.updated") {
+      const account = event.data.object as Stripe.Account;
+      const vendor = await Vendor.findOne({
+        stripeAccountId: account.id,
+      });
+
+      if (vendor) {
+        vendor.stripeOnboarded = account.details_submitted ?? false;
+        vendor.payoutsEnabled =
+          account.charges_enabled && account.payouts_enabled;
+        // await vendor.save();
+        //    appEventEmitter.emit("vendor.payout.status", {
+        //     vendor.user,
+        //      vendor.stripeOnboarded,
+        //     vendor.payoutsEnabled
+
+        //   });
       }
     }
     await session.commitTransaction();

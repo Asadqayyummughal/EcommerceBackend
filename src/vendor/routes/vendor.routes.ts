@@ -3,6 +3,7 @@ const router = Router();
 import * as vendorController from "../controller/vendor.controller";
 import { authMiddleware } from "../../middlewares/auth.middleware";
 import { isAdmin } from "../../middlewares/admin.middleware";
+import { requireActiveVendor } from "../../middlewares/vendor.middleware";
 
 router.post("/", authMiddleware, vendorController.applyVendor);
 router.get(
@@ -17,7 +18,31 @@ router.put(
   isAdmin,
   vendorController.approveVendor,
 ); // approveVenodor
-router.post("/payouts/request", authMiddleware, vendorController.requestPayout);
+router.post(
+  "/payouts/request",
+  authMiddleware,
+  requireActiveVendor,
+  vendorController.requestPayout,
+);
+router.get(
+  "/payouts/",
+  authMiddleware,
+  isAdmin,
+  vendorController.listAllPayouts,
+);
+router.put(
+  "/payouts/:id/approve",
+  authMiddleware,
+  isAdmin,
+  vendorController.approvedPayout,
+);
+router.post(
+  "/stripe/onboard",
+  authMiddleware,
+  requireActiveVendor,
+  vendorController.onboardStripe,
+);
+
 // /vendor/payouts/request
 export default router;
 
@@ -27,5 +52,3 @@ export default router;
 //GET /vendor/analytics/sales?range=7d|30d|12m
 //GET /vendor/analytics/top-products
 //GET /vendor/analytics/order-status
-//POST /vendor/payouts/request
-//POST /vendor/payouts/request

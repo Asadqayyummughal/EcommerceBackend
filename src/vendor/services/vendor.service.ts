@@ -5,6 +5,8 @@ import Order from "../../models/order.model";
 import { VendorWallet } from "../../models/vendorWallet.model";
 import mongoose from "mongoose";
 import { IPayout, Payout } from "../../models/payout.model";
+import Stripe from "stripe";
+import { error } from "console";
 export const applyForVendor = async (userId: string) => {
   //check here if venore role exist or not
   let user = await User.findById(userId); //69809c2a09c9a53278e149f5
@@ -65,11 +67,16 @@ export const vedorAnalytics = async (storeId: string) => {
     avgOrderValue: totalRevenue / orders.length,
   };
 };
+//vedor payout request
 export const requestPayout = async (body: IPayout, vendorId: string) => {
   const { amount, method, payoutDetails } = body;
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
+    const vendor = await Vendor.findById({ vendorId });
+    if (!vendor || !vendor.payoutsEnabled) {
+      throw new Error("Stripe onboarding incomplete");
+    }
     const wallet = await VendorWallet.findOne({ vendor: vendorId }).session(
       session,
     );
@@ -111,11 +118,103 @@ export const topProductsAnlaytics = async () => {
   //   revenue: { $sum: "$items.subtotal" }
   // }
 };
+//admin approved payout
+export const approvePayout = async (payoutId: string) => {
+  return await Payout.findByIdAndUpdate(
+    payoutId,
+    { status: "approved" },
+    { new: true },
+  );
+};
+export const listAllPayouts = async () => {
+  return await Payout.find();
+};
 
-// export const approvePayout = async (payoutId: string) => {
-//   return await Payout.findByIdAndUpdate(
-//     payoutId,
-//     { status: "approved" },
-//     { new: true }
-//   );
-// };
+export const rejectPayout = async (payoutId: string, reason: string) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const payout = await Payout.findById(payoutId).session(session);
+    if (!payout) throw new Error("Payout not found");
+    const wallet = await VendorWallet.findOne({
+      vendor: payout.vendor,
+    }).session(session);
+    if (!wallet) throw new Error("Wallet not found");
+    wallet.balance += payout.amount;
+    wallet.lockedBalance -= payout.amount;
+    payout.status = "rejected";
+    payout.failureReason = reason;
+    await wallet.save({ session });
+    await payout.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
+  }
+};
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-12-15.clover", // use stable version
+});
+
+export const enableVendorStripeAccount = async (userId: string) => {
+  const vendor = await Vendor.findOne({ user: userId });
+  if (!vendor) throw new Error("Vendor does not exist");
+  let stripeAccount;
+
+  // 🟢 CASE 1: Account already exists
+  if (vendor.stripeAccountId) {
+    stripeAccount = await stripe.accounts.retrieve(vendor.stripeAccountId);
+
+    // ✅ If already fully onboarded
+    if (stripeAccount.details_submitted && stripeAccount.payouts_enabled) {
+      vendor.stripeOnboarded = true;
+      vendor.payoutsEnabled = true;
+      await vendor.save();
+
+      return {
+        message: "Stripe account already fully onboarded.",
+        completed: true,
+      };
+    }
+
+    // ❗ Not completed → create fresh onboarding link
+  }
+
+  // 🔵 CASE 2: No Stripe account yet → create one
+  if (!vendor.stripeAccountId) {
+    stripeAccount = await stripe.accounts.create({
+      type: "express",
+      country: "US",
+      email: vendor.email,
+      capabilities: {
+        transfers: { requested: true },
+      },
+      metadata: {
+        vendorId: vendor._id.toString(),
+      },
+    });
+
+    vendor.stripeAccountId = stripeAccount.id;
+    vendor.stripeOnboarded = false;
+    vendor.payoutsEnabled = false;
+    await vendor.save();
+  }
+  // 🔁 Create onboarding link (resume flow)
+  // const accountLink = await stripe.accountLinks.create({
+  //   account: vendor.stripeAccountId,
+  //   refresh_url: `${process.env.FRONTEND_URL}/vendor/stripe/refresh`,
+  //   return_url: `${process.env.FRONTEND_URL}/vendor/stripe/success`,
+  //   type: "account_onboarding",
+  // });
+  const loginLink = await stripe.accounts.createLoginLink(
+    vendor.stripeAccountId,
+  );
+
+  return {
+    url: loginLink,
+    completed: false,
+  };
+};
