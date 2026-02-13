@@ -6,7 +6,6 @@ import { VendorWallet } from "../../models/vendorWallet.model";
 import mongoose from "mongoose";
 import { IPayout, Payout } from "../../models/payout.model";
 import Stripe from "stripe";
-import { error } from "console";
 export const applyForVendor = async (userId: string) => {
   //check here if venore role exist or not
   let user = await User.findById(userId); //69809c2a09c9a53278e149f5
@@ -125,6 +124,7 @@ export const approvePayout = async (payoutId: string) => {
     { status: "approved" },
     { new: true },
   );
+  //send the amount to Vendor Wallet
 };
 export const listAllPayouts = async () => {
   return await Payout.find();
@@ -217,4 +217,31 @@ export const enableVendorStripeAccount = async (userId: string) => {
     url: loginLink,
     completed: false,
   };
+};
+
+export const payoutVendor = async (vendorId: string, amount: number) => {
+  const vendor = await Vendor.findById(vendorId);
+  if (!vendor) throw new Error("Vendor not found");
+
+  const wallet = await VendorWallet.findOne({ vendor: vendorId });
+  if (!wallet || wallet.balance < amount)
+    throw new Error("Insufficient balance");
+
+  if (!vendor.stripeAccountId) throw new Error("Stripe not connected");
+
+  const stripeAccount = await stripe.accounts.retrieve(vendor.stripeAccountId);
+
+  if (!stripeAccount.payouts_enabled)
+    throw new Error("Stripe payouts not enabled");
+
+  const transfer = await stripe.transfers.create({
+    amount: Math.round(amount * 100),
+    currency: "usd",
+    destination: vendor.stripeAccountId,
+  });
+  wallet.balance -= amount;
+  // wallet.totalWithdrawn += amount;
+  await wallet.save();
+
+  return transfer;
 };

@@ -105,3 +105,19 @@ export const listAllPayouts = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const payoutVendor = async (req: Request, res: Response) => {
+  try {
+    const { vendorId, amount } = req.body;
+    let payouts = await VendorService.payoutVendor(vendorId, amount);
+    return res.status(200).json({
+      success: true,
+      data: payouts,
+    });
+  } catch (Error: any) {
+    return res.status(401).json({
+      success: false,
+      message: Error.message,
+    });
+  }
+};

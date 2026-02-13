@@ -2,7 +2,6 @@ import Stripe from "stripe";
 import Order, { IOrder } from "../models/order.model";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
-import { restoreInventory } from "../utils/restore-inventory";
 import { appEventEmitter } from "../events/appEvents";
 import Product from "../models/product.model";
 import { Vendor } from "../models/vendor.model";
@@ -62,7 +61,6 @@ export const stripeWebhook = async (req: Request, res: Response) => {
       const vendor = await Vendor.findOne({
         stripeAccountId: account.id,
       });
-
       if (vendor) {
         vendor.stripeOnboarded = account.details_submitted ?? false;
         vendor.payoutsEnabled =

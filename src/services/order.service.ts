@@ -159,7 +159,6 @@ export const getOrderById = async (user: AuthUser, orderId: string) => {
     //&& user.role !== "admin"
     throw new Error("Unauthorized");
   }
-
   return order;
 };
 

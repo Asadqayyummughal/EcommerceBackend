@@ -24,6 +24,7 @@ router.post(
   requireActiveVendor,
   vendorController.requestPayout,
 );
+
 router.get(
   "/payouts/",
   authMiddleware,
@@ -35,6 +36,12 @@ router.put(
   authMiddleware,
   isAdmin,
   vendorController.approvedPayout,
+);
+router.post(
+  "/payouts/withdraw",
+  authMiddleware,
+  requireActiveVendor,
+  vendorController.requestPayout,
 );
 router.post(
   "/stripe/onboard",
