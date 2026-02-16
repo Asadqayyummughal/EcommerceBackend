@@ -41,11 +41,5 @@ router.get(
   //   roleMiddleware
   productControllers.getProduct,
 );
-router.get(
-  "/:vendorId/store",
-  authMiddleware,
-  //   roleMiddleware
-  productControllers.listVendorProducts,
-);
 
 export default router;

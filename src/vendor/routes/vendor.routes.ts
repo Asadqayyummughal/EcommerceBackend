@@ -49,6 +49,12 @@ router.post(
   requireActiveVendor,
   vendorController.onboardStripe,
 );
+router.get(
+  "/:vendorId/store",
+  authMiddleware,
+  //   roleMiddleware
+  vendorController.listVendorProducts,
+);
 
 // /vendor/payouts/request
 export default router;

@@ -18,7 +18,7 @@ router.post(
   "/add",
   validate(addToCartSchema),
   authMiddleware,
-  requirePermission(PERMISSIONS.CART_CREATE),
+  // requirePermission(PERMISSIONS.CART_CREATE),
   cartController.addToCart,
 );
 router.put(

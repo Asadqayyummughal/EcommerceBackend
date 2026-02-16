@@ -6,6 +6,11 @@ import { VendorWallet } from "../../models/vendorWallet.model";
 import mongoose from "mongoose";
 import { IPayout, Payout } from "../../models/payout.model";
 import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-12-15.clover", // use stable version
+});
+
 export const applyForVendor = async (userId: string) => {
   //check here if venore role exist or not
   let user = await User.findById(userId); //69809c2a09c9a53278e149f5
@@ -155,10 +160,6 @@ export const rejectPayout = async (payoutId: string, reason: string) => {
   }
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover", // use stable version
-});
-
 export const enableVendorStripeAccount = async (userId: string) => {
   const vendor = await Vendor.findOne({ user: userId });
   if (!vendor) throw new Error("Vendor does not exist");
@@ -245,3 +246,4 @@ export const payoutVendor = async (vendorId: string, amount: number) => {
 
   return transfer;
 };
+//listAllVendorOrders

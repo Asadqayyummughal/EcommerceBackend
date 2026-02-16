@@ -15,7 +15,8 @@ export const addToCart = async (req: Request, res: Response) => {
     req.user.id,
     productId,
     quantity,
-    variantSku
+    variantSku,
+    req.user.role.toString(),
   );
   res.json(cart);
 };
@@ -26,7 +27,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
     req.user.id,
     productId,
     quantity,
-    variantSku
+    variantSku,
   );
   res.json(cart);
 };
@@ -36,7 +37,7 @@ export const removeCartItem = async (req: Request, res: Response) => {
   const cart = await cartService.removeCartItemService(
     req.user.id,
     productId,
-    variantSku
+    variantSku,
   );
   res.json(cart);
 };

@@ -17,11 +17,15 @@ export const addToCartService = async (
   userId: string,
   productId: string,
   quantity: number,
-  variantSku?: string,
+  variantSku: string,
+  roleId: string,
 ) => {
   const product = await Product.findById(productId);
   if (!product || !product.isActive) {
     throw new Error("Product not available");
+  }
+  if (product.vendor.toString() === roleId) {
+    throw new Error("You cannot buy your own product");
   }
   let price = product.salePrice ?? product.price;
   if (variantSku) {
@@ -95,10 +99,7 @@ export const removeCartItemService = async (
   // Find the index of the item to remove
   const itemIndex = cart.items.findIndex((item) => {
     const matchesProduct = item.product.toString() === productId;
-    // If variantSku is provided, it must match exactly
-    // If not provided, we just match by product (remove all variants of that product)
     const matchesVariant = variantSku ? item.variantSku === variantSku : true;
-
     return matchesProduct && matchesVariant;
   });
 

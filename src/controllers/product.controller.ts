@@ -77,18 +77,3 @@ export const deleteProduct = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, message: err.message });
   }
 };
-
-export const listVendorProducts = async (req: Request, res: Response) => {
-  try {
-    debugger;
-    let products = await productService.getVendorStoreProducts(
-      req.params.vendorId,
-    );
-    return res.json({
-      success: true,
-      products: products,
-    });
-  } catch (err: any) {
-    return res.status(400).json({ success: false, message: err.message });
-  }
-};
