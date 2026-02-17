@@ -122,16 +122,16 @@ export const payoutVendor = async (req: Request, res: Response) => {
   }
 };
 
-export const listVendorProducts = async (req: Request, res: Response) => {
-  try {
-    let products = await VendorService.getVendorStoreProducts(
-      req.params.vendorId,
-    );
-    return res.json({
-      success: true,
-      products: products,
-    });
-  } catch (err: any) {
-    return res.status(400).json({ success: false, message: err.message });
-  }
-};
+// export const listVendorProducts = async (req: Request, res: Response) => {
+//   try {
+//     let products = await VendorService.f(
+//       req.params.vendorId,
+//     );
+//     return res.json({
+//       success: true,
+//       products: products,
+//     });
+//   } catch (err: any) {
+//     return res.status(400).json({ success: false, message: err.message });
+//   }
+// };

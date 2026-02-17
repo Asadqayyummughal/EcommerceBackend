@@ -43,6 +43,20 @@ export const listStores = async (req: Request, res: Response) => {
     });
   }
 };
+export const getStoreByUserId = async (req: Request, res: Response) => {
+  try {
+    let store = await storeService.getStoreByUserId(req.user.id);
+    res.status(200).json({
+      success: true,
+      data: store,
+    });
+  } catch (Error: any) {
+    res.status(400).json({
+      success: false,
+      Error: Error.message,
+    });
+  }
+};
 
 export const updateStore = async (req: Request, res: Response) => {
   try {
@@ -54,6 +68,51 @@ export const updateStore = async (req: Request, res: Response) => {
     res.status(201).json({
       success: true,
       data: store,
+    });
+  } catch (Error: any) {
+    res.status(400).json({
+      success: false,
+      Error: Error.message,
+    });
+  }
+};
+export const getStoreAnalytics = async (req: Request, res: Response) => {
+  try {
+    let store = await storeService.getStoreAnalytics(req.params.id);
+    res.status(201).json({
+      success: true,
+      data: store,
+    });
+  } catch (Error: any) {
+    res.status(400).json({
+      success: false,
+      Error: Error.message,
+    });
+  }
+};
+
+export const listStoreProducts = async (req: Request, res: Response) => {
+  try {
+    let storeProducts = await storeService.listStoreProducts(req.params.id);
+    res.status(201).json({
+      success: true,
+      data: storeProducts,
+    });
+  } catch (Error: any) {
+    res.status(400).json({
+      success: false,
+      Error: Error.message,
+    });
+  }
+};
+export const listStoreOrders = async (req: Request, res: Response) => {
+  try {
+    let storeProducts = await storeService.getOrdersByVendorWithAggregation(
+      req.params.vendorId,
+    );
+    res.status(201).json({
+      success: true,
+      data: storeProducts,
     });
   } catch (Error: any) {
     res.status(400).json({

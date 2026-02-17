@@ -1,6 +1,8 @@
 import slugify from "slugify";
 import { IStore, Store, STORE_STATUS_TYPE } from "../../models/store.model";
 import { Vendor } from "../../models/vendor.model";
+import Order from "../../models/order.model";
+import mongoose from "mongoose";
 
 export const createStore = async (userId: string, body: IStore) => {
   const { name, description } = body;
@@ -50,6 +52,19 @@ export const listAllStores = async () => {
   return await Store.find();
 };
 
+export const getStoreByUserId = async (userId: string) => {
+  const vendor = await Vendor.findOne({ user: userId });
+  if (!vendor) {
+    throw new Error("Vendor not found for this user");
+  }
+  const store = await Store.findOne({ vendor: vendor._id });
+  if (!store) {
+    throw new Error("Store not found or does not belong to you");
+  }
+
+  return store;
+};
+
 export const updateStore = async (
   userId: string,
   storeId: string,
@@ -72,4 +87,52 @@ export const updateStore = async (
   );
 
   return updated;
+};
+
+export const getStoreAnalytics = async (storeId: string) => {
+  const orders = await Order.find({ store: storeId });
+  const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+  return {
+    totalOrders: orders.length,
+    totalRevenue,
+    avgOrderValue: totalRevenue / orders.length,
+  };
+};
+export const listStoreProducts = async (storeId: string) => {
+  const orders = await Order.find({ store: storeId });
+  return orders;
+};
+export const getOrdersByVendorWithAggregation = async (vendorId: string) => {
+  const orders = await Order.aggregate([
+    {
+      $match: {
+        "items.vendor": new mongoose.Types.ObjectId(vendorId),
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+    // Optional: only keep items from this vendor
+    {
+      $set: {
+        items: {
+          $filter: {
+            input: "$items",
+            as: "item",
+            cond: {
+              $eq: ["$$item.vendor", new mongoose.Types.ObjectId(vendorId)],
+            },
+          },
+        },
+      },
+    },
+    // Optional: add computed fields
+    {
+      $addFields: {
+        vendorTotal: { $sum: "$items.subtotal" },
+      },
+    },
+  ]);
+
+  return orders;
 };

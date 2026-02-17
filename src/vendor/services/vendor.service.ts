@@ -62,15 +62,6 @@ export const approveVendor = async (vendorId: string, userId: string) => {
   return { user, vendor };
 };
 
-export const vedorAnalytics = async (storeId: string) => {
-  const orders = await Order.find({ store: storeId });
-  const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
-  return {
-    totalOrders: orders.length,
-    totalRevenue,
-    avgOrderValue: totalRevenue / orders.length,
-  };
-};
 //vedor payout request
 export const requestPayout = async (body: IPayout, vendorId: string) => {
   const { amount, method, payoutDetails } = body;
@@ -115,9 +106,9 @@ export const requestPayout = async (body: IPayout, vendorId: string) => {
 };
 
 export const topProductsAnlaytics = async () => {
-  //   $unwind: "$items"
+  // $unwind: "$items"
   // $group: {
-  //   _id: "$items.product",
+  //  _id: "$items.product",
   //   totalSold: { $sum: "$items.quantity" },
   //   revenue: { $sum: "$items.subtotal" }
   // }
