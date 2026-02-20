@@ -68,13 +68,14 @@ export const requestPayout = async (body: IPayout, vendorId: string) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const vendor = await Vendor.findById({ vendorId });
+    const vendor = await Vendor.findById({ _id: vendorId });
     if (!vendor || !vendor.payoutsEnabled) {
       throw new Error("Stripe onboarding incomplete");
     }
     const wallet = await VendorWallet.findOne({ vendor: vendorId }).session(
       session,
     );
+
     if (!wallet || wallet.balance < amount) {
       throw new Error("Wallet does not exist or Insufficient wallet balance");
     }

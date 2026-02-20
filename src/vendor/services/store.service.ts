@@ -3,6 +3,8 @@ import { IStore, Store, STORE_STATUS_TYPE } from "../../models/store.model";
 import { Vendor } from "../../models/vendor.model";
 import Order from "../../models/order.model";
 import mongoose from "mongoose";
+import Product from "../../models/product.model";
+import { toObjectId } from "../../utils/helpers.utils";
 
 export const createStore = async (userId: string, body: IStore) => {
   const { name, description } = body;
@@ -89,17 +91,38 @@ export const updateStore = async (
   return updated;
 };
 
-export const getStoreAnalytics = async (storeId: string) => {
-  const orders = await Order.find({ store: storeId });
-  const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
-  return {
-    totalOrders: orders.length,
-    totalRevenue,
-    avgOrderValue: totalRevenue / orders.length,
-  };
+export const getStoreAnalytics = async (vendorId: string) => {
+  const vendorObjectId = toObjectId(vendorId);
+  const stats = await Order.aggregate([
+    { $match: { "items.vendor": vendorObjectId } },
+    { $unwind: "$items" },
+    { $match: { "items.vendor": vendorObjectId } },
+    {
+      $group: {
+        _id: null,
+        totalRevenue: { $sum: "$items.subtotal" },
+        totalOrders: { $addToSet: "$_id" }, // unique orders
+      },
+    },
+    {
+      $project: {
+        totalRevenue: 1,
+        totalOrders: { $size: "$totalOrders" },
+        avgOrderValue: {
+          $cond: [
+            { $eq: [{ $size: "$totalOrders" }, 0] },
+            0,
+            { $divide: ["$totalRevenue", { $size: "$totalOrders" }] },
+          ],
+        },
+      },
+    },
+  ]);
+
+  return stats[0] || { totalOrders: 0, totalRevenue: 0, avgOrderValue: 0 };
 };
 export const listStoreProducts = async (storeId: string) => {
-  const orders = await Order.find({ store: storeId });
+  const orders = await Product.find({ store: storeId });
   return orders;
 };
 export const getOrdersByVendorWithAggregation = async (vendorId: string) => {

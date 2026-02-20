@@ -25,16 +25,19 @@ router.post(
   vendorController.requestPayout,
 );
 
-router.get(
-  "/payouts/",
-  authMiddleware,
-  isAdmin,
-  vendorController.listAllPayouts,
-);
+router.get("/payouts/", authMiddleware, vendorController.listAllPayouts);
 router.put(
   "/payouts/:id/approve",
   authMiddleware,
-  isAdmin,
+  // isAdmin,
+  requireActiveVendor,
+  vendorController.approvedPayout,
+);
+router.get(
+  "/payouts/:id/widthdraw",
+  authMiddleware,
+  // isAdmin,
+  requireActiveVendor,
   vendorController.approvedPayout,
 );
 router.post(

@@ -8,12 +8,13 @@ import {
   updateProductSchema,
 } from "../validators/product.validator";
 import { validate } from "../middlewares/validate.middleware";
+import { requireActiveVendor } from "../middlewares/vendor.middleware";
 const router = Router();
 
 router.post(
   "/",
   authMiddleware,
-  //   roleMiddleware,
+  requireActiveVendor,
   uploadMiddleware.array("images", 6),
   validate(createProductSchema),
   productControllers.createProduct,

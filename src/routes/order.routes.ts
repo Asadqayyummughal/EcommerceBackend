@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as orderController from "../controllers/order.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { roleMiddleware } from "../middlewares/role.middleware";
+import { isAdmin } from "../middlewares/admin.middleware";
 
 const router = Router();
 router.post("/checkout", authMiddleware, orderController.checkout);
@@ -15,7 +16,8 @@ router.get("/:id/tracking", authMiddleware, orderController.getMyOrders);
 router.put(
   "/:id/status",
   authMiddleware,
-  //   roleMiddleware(["admin"]),
+  // isAdmin,
+  // roleMiddleware,
   orderController.updateOrderStatus,
 );
 
