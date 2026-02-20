@@ -79,6 +79,13 @@ export const requestPayout = async (body: IPayout, vendorId: string) => {
     if (!wallet || wallet.balance < amount) {
       throw new Error("Wallet does not exist or Insufficient wallet balance");
     }
+    if (!vendor.stripeAccountId) throw new Error("Stripe not connected");
+    const stripeAccount = await stripe.accounts.retrieve(
+      vendor.stripeAccountId,
+    );
+
+    if (!stripeAccount.payouts_enabled)
+      throw new Error("Stripe payouts not enabled");
     // 🔒 Lock funds
     wallet.balance -= amount;
     wallet.lockedBalance += amount;
