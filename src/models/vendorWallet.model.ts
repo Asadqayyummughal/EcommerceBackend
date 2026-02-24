@@ -23,6 +23,11 @@ const vendorWalletSchema = new Schema(
       default: 0,
       min: 0,
     },
+    totalPaidOut: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     // Optional: useful for audit / history
     lastPayoutDate: Date,
     lastPayoutAmount: Number,
@@ -40,6 +45,7 @@ export interface IVendorWallet {
   totalEarned: number; // lifetime gross earnings before commissions/deductions
   lastPayoutDate?: Date;
   lastPayoutAmount?: number;
+  totalPaidOut?: number;
   createdAt: Date;
   updatedAt: Date;
 }

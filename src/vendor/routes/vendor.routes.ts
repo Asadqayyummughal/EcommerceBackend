@@ -34,11 +34,11 @@ router.put(
   vendorController.approvedPayout,
 );
 router.get(
-  "/payouts/:id/widthdraw",
+  "/payout/:id/withdraw",
   authMiddleware,
   // isAdmin,
   requireActiveVendor,
-  vendorController.approvedPayout,
+  vendorController.payoutVendor,
 );
 router.post(
   "/payouts/withdraw",
@@ -51,6 +51,12 @@ router.post(
   authMiddleware,
   requireActiveVendor,
   vendorController.onboardStripe,
+);
+router.get(
+  "/wallet/:vendorId",
+  authMiddleware,
+  requireActiveVendor,
+  vendorController.getWalletDetail,
 );
 // router.get(
 //   "/:vendorId/store",

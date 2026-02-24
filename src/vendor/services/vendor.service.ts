@@ -219,30 +219,48 @@ export const enableVendorStripeAccount = async (userId: string) => {
   };
 };
 
-export const payoutVendor = async (vendorId: string, amount: number) => {
-  const vendor = await Vendor.findById(vendorId);
+export const payoutVendor = async (userId: string, payoutId: string) => {
+  const payout = await Payout.findById({ _id: payoutId });
+  if (!payout) throw new Error("Payout does not exist");
+  const vendor = await Vendor.findOne({ user: userId });
   if (!vendor) throw new Error("Vendor not found");
-
-  const wallet = await VendorWallet.findOne({ vendor: vendorId });
-  if (!wallet || wallet.balance < amount)
+  const wallet = await VendorWallet.findOne({ vendor: vendor._id });
+  if (!wallet || wallet.balance < payout.amount)
     throw new Error("Insufficient balance");
-
   if (!vendor.stripeAccountId) throw new Error("Stripe not connected");
-
   const stripeAccount = await stripe.accounts.retrieve(vendor.stripeAccountId);
-
   if (!stripeAccount.payouts_enabled)
     throw new Error("Stripe payouts not enabled");
 
-  const transfer = await stripe.transfers.create({
-    amount: Math.round(amount * 100),
-    currency: "usd",
-    destination: vendor.stripeAccountId,
-  });
-  wallet.balance -= amount;
-  // wallet.totalWithdrawn += amount;
+  // const transfer = await stripe.transfers.create({
+  //   amount: Math.round(payout.amount * 100),
+  //   currency: "usd",
+  //   destination: wallet.stripeAccountId,
+  // });
+  const transfer = await stripe.transfers.create(
+    {
+      amount: Math.round(payout.amount * 100),
+      currency: "usd",
+      destination: vendor.stripeAccountId,
+      metadata: {
+        payoutId: payout._id.toString(),
+        vendorId: vendor._id.toString(),
+      },
+    },
+    {
+      idempotencyKey: `payout-${payout._id}`,
+    },
+  );
+  wallet.balance -= payout.amount;
+  //  wallet.totalWithdrawn +=payout.amount;
   await wallet.save();
 
   return transfer;
 };
 //listAllVendorOrders
+
+export const getVendorWalletDetail = async (vendorId: string) => {
+  let vendorWallet = await VendorWallet.findOne({ vendor: vendorId });
+  if (!vendorWallet) throw new Error("wallet not exist");
+  return vendorWallet;
+};

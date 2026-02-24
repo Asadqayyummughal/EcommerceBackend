@@ -108,11 +108,26 @@ export const listAllPayouts = async (req: Request, res: Response) => {
 
 export const payoutVendor = async (req: Request, res: Response) => {
   try {
-    const { vendorId, amount } = req.body;
-    let payouts = await VendorService.payoutVendor(vendorId, amount);
+    // const { vendorId, amount } = req.body;
+    let payouts = await VendorService.payoutVendor(req.user.id, req.params.id);
     return res.status(200).json({
       success: true,
       data: payouts,
+    });
+  } catch (Error: any) {
+    return res.status(401).json({
+      success: false,
+      message: Error.message,
+    });
+  }
+};
+
+export const getWalletDetail = async (req: Request, res: Response) => {
+  try {
+    let wallet = await VendorService.getVendorWalletDetail(req.params.vendorId);
+    return res.status(200).json({
+      success: true,
+      data: wallet,
     });
   } catch (Error: any) {
     return res.status(401).json({

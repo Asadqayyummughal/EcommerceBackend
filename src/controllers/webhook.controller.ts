@@ -5,6 +5,8 @@ import { Request, Response } from "express";
 import { appEventEmitter } from "../events/appEvents";
 import Product from "../models/product.model";
 import { Vendor } from "../models/vendor.model";
+import { Payout } from "../models/payout.model";
+import { VendorWallet } from "../models/vendorWallet.model";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
@@ -74,6 +76,13 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         //   });
       }
     }
+    if (event.type == "transfer.created") {
+      await handleTransferSuccess(event.data.object as Stripe.Transfer);
+    }
+    if (event.type == "transfer.reversed") {
+      await handleTransferReversed(event.data.object as Stripe.Transfer);
+    }
+
     await session.commitTransaction();
     session.endSession();
     res.json({ received: true });
@@ -120,3 +129,43 @@ const releaseStock = async (order: IOrder) => {
     }
   }
 };
+
+async function handleTransferSuccess(transfer: Stripe.Transfer) {
+  const payoutId = transfer.metadata.payoutId;
+  const payout = await Payout.findById({ _id: payoutId });
+  if (!payout) throw new Error("Payout doesnot exist.");
+  const decimalAmount = payout.amount / 100;
+  if (!payout) return;
+  await VendorWallet.updateOne(
+    { vendor: payout.vendor },
+    {
+      $inc: {
+        lockedBalance: -decimalAmount,
+        totalPaidOut: payout.amount,
+      },
+    },
+  );
+  payout.status = "paid";
+  payout.stripeTransferId = transfer.id;
+  await payout.save();
+}
+
+async function handleTransferReversed(transfer: any) {
+  const payoutId = transfer.metadata.payoutId;
+
+  const payout = await Payout.findById(payoutId);
+  if (!payout) return;
+
+  await VendorWallet.updateOne(
+    { vendor: payout.vendor },
+    {
+      $inc: {
+        lockedBalance: -payout.amount,
+        balance: payout.amount,
+      },
+    },
+  );
+
+  payout.status = "failed";
+  await payout.save();
+}
