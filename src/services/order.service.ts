@@ -13,6 +13,7 @@ import { Coupon } from "../models/coupon.model";
 import { CouponUsage } from "../models/couponUsage.model";
 import { VendorWallet } from "../models/vendorWallet.model";
 import { Commission } from "../models/commission.model";
+import { sendRealtimeNotification } from "../utils/notifications";
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ["paid", "cancelled"],
@@ -131,7 +132,6 @@ export const checkoutOrder = async (
         { session },
       );
     }
-
     // 🔥 Clear cart
     cart.items = [];
     cart.totalItems = 0;
@@ -139,6 +139,10 @@ export const checkoutOrder = async (
     await cart.save({ session });
     await session.commitTransaction();
     session.endSession();
+    sendRealtimeNotification(userId, {
+      message: "new order placed",
+      orderDetial: order[0],
+    });
     return order[0];
   } catch (error) {
     await session.abortTransaction();

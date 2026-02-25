@@ -24,7 +24,7 @@ export const addToCartService = async (
   if (!product || !product.isActive) {
     throw new Error("Product not available");
   }
-  if (product.vendor.toString() === roleId) {
+  if (product.vendor && product.vendor.toString() === roleId) {
     throw new Error("You cannot buy your own product");
   }
   let price = product.salePrice ?? product.price;

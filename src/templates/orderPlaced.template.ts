@@ -12,7 +12,6 @@ export const orderPlacedTemplate = ({
   return `
     <div style="font-family: Arial, sans-serif">
       <h2>Hi ${userName}, 🎉</h2>
-
       <p>Your order has been placed successfully.</p>
 
       <h3>Order Details</h3>
@@ -20,7 +19,7 @@ export const orderPlacedTemplate = ({
         ${order.items
           .map(
             (item) =>
-              `<li>${item.title} × ${item.quantity} — Rs ${item.price}</li>`
+              `<li>${item.title} × ${item.quantity} — Rs ${item.price}</li>`,
           )
           .join("")}
       </ul>
