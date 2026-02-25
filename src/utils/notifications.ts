@@ -13,9 +13,9 @@ export const sendGlobalNotification = async (payload: object) => {
   // Method B - equivalent (older style)
   // io.sockets.emit("notification", payload);
 };
-await sendGlobalNotification({
-  type: "system",
-  title: "Maintenance completed",
-  message: "The system is now fully operational 🚀",
-  timestamp: new Date().toISOString(),
-});
+// await sendGlobalNotification({
+//   type: "system",
+//   title: "Maintenance completed",
+//   message: "The system is now fully operational 🚀",
+//   timestamp: new Date().toISOString(),
+// });
