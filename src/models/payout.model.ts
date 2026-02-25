@@ -24,6 +24,16 @@ const payoutSchema = new Schema(
       required: true,
       min: 0,
     },
+    currency: {
+      type: String,
+      default: "usd",
+      required: true,
+      uppercase: true,
+      minlength: 3,
+      maxlength: 3,
+
+      // You can add enum if you want to restrict to supported currencies
+    },
     method: {
       type: String,
       enum: PAYMENT_METHOD, // you can extend later
@@ -69,6 +79,7 @@ export interface IPayout {
   _id: Types.ObjectId;
   vendor: Types.ObjectId;
   amount: number;
+  currency?: string;
   method: PaymentaMethodType;
   payoutDetails: {
     bankName: string;

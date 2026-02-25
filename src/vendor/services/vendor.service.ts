@@ -6,7 +6,37 @@ import { VendorWallet } from "../../models/vendorWallet.model";
 import mongoose from "mongoose";
 import { IPayout, Payout } from "../../models/payout.model";
 import Stripe from "stripe";
+import { debug } from "console";
+const ZERO_DECIMAL_CURRENCIES = [
+  "bif",
+  "clp",
+  "djf",
+  "gnf",
+  "jpy",
+  "kmf",
+  "krw",
+  "mga",
+  "pyg",
+  "rwf",
+  "ugx",
+  "vnd",
+  "vuv",
+  "xaf",
+  "xof",
+  "xpf",
+];
 
+const getDecimals = (currency: string): number => {
+  const lower = currency.toLowerCase();
+  if (["isk", "ugx"].includes(lower)) return 2; // special: represent as two-decimal
+  if (ZERO_DECIMAL_CURRENCIES.includes(lower)) return 0;
+  return 2; // default
+};
+
+const toSmallestUnit = (amount: number, currency: string): number => {
+  const decimals = getDecimals(currency);
+  return Math.round(amount * Math.pow(10, decimals));
+};
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover", // use stable version
 });
@@ -87,8 +117,8 @@ export const requestPayout = async (body: IPayout, vendorId: string) => {
     if (!stripeAccount.payouts_enabled)
       throw new Error("Stripe payouts not enabled");
     // 🔒 Lock funds
-    wallet.balance -= amount;
-    wallet.lockedBalance += amount;
+    wallet.balance -= Number(amount);
+    wallet.lockedBalance += Number(amount);
     await wallet.save({ session });
     const payout = await Payout.create(
       [
@@ -220,40 +250,65 @@ export const enableVendorStripeAccount = async (userId: string) => {
 };
 
 export const payoutVendor = async (userId: string, payoutId: string) => {
-  const payout = await Payout.findById({ _id: payoutId });
+  const payout = await Payout.findById(payoutId);
   if (!payout) throw new Error("Payout does not exist");
+
   const vendor = await Vendor.findOne({ user: userId });
   if (!vendor) throw new Error("Vendor not found");
+
   const wallet = await VendorWallet.findOne({ vendor: vendor._id });
   if (!wallet || wallet.balance < payout.amount)
     throw new Error("Insufficient balance");
+
   if (!vendor.stripeAccountId) throw new Error("Stripe not connected");
+
   const stripeAccount = await stripe.accounts.retrieve(vendor.stripeAccountId);
   if (!stripeAccount.payouts_enabled)
     throw new Error("Stripe payouts not enabled");
 
-  // const transfer = await stripe.transfers.create({
-  //   amount: Math.round(payout.amount * 100),
-  //   currency: "usd",
-  //   destination: wallet.stripeAccountId,
-  // });
-  const transfer = await stripe.transfers.create(
-    {
-      amount: Math.round(payout.amount * 100),
-      currency: "usd",
-      destination: vendor.stripeAccountId,
-      metadata: {
-        payoutId: payout._id.toString(),
-        vendorId: vendor._id.toString(),
+  // Use the connected account's default currency (safest, avoids FX)
+  const currency = stripeAccount.default_currency;
+
+  // Optional: if payout has its own currency field, check/convert here
+  // e.g., if (payout.currency !== currency) { convert amount via FX API }
+
+  const transferAmount = toSmallestUnit(payout.amount, currency || "usd");
+  payout.currency = currency;
+  let transfer;
+  try {
+    transfer = await stripe.transfers.create(
+      {
+        amount: transferAmount,
+        currency: currency || "usd", // dynamic!
+        destination: vendor.stripeAccountId,
+        metadata: {
+          payoutId: payout._id.toString(),
+          vendorId: vendor._id.toString(),
+        },
       },
-    },
-    {
-      idempotencyKey: `payout-${payout._id}`,
-    },
-  );
-  wallet.balance -= payout.amount;
-  //  wallet.totalWithdrawn +=payout.amount;
-  await wallet.save();
+      {
+        idempotencyKey: `payout-${payout._id}`,
+      },
+    );
+
+    // Success: update wallet
+    wallet.balance -= payout.amount;
+    // wallet.totalWithdrawn += payout.amount;  // uncomment if needed
+    await wallet.save();
+    await payout.save();
+  } catch (error) {
+    // Handle Stripe errors
+    if (error instanceof Stripe.errors.StripeError) {
+      if (
+        error.code === "parameter_invalid" ||
+        error.message.includes("currency")
+      ) {
+        throw new Error(`Currency issue: ${error.message}`);
+      }
+      // Other cases: insufficient_funds, etc.
+    }
+    throw error; // rethrow for caller
+  }
 
   return transfer;
 };

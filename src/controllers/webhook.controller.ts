@@ -134,13 +134,12 @@ async function handleTransferSuccess(transfer: Stripe.Transfer) {
   const payoutId = transfer.metadata.payoutId;
   const payout = await Payout.findById({ _id: payoutId });
   if (!payout) throw new Error("Payout doesnot exist.");
-  const decimalAmount = payout.amount / 100;
   if (!payout) return;
   await VendorWallet.updateOne(
     { vendor: payout.vendor },
     {
       $inc: {
-        lockedBalance: -decimalAmount,
+        lockedBalance: -payout.amount,
         totalPaidOut: payout.amount,
       },
     },
