@@ -13,7 +13,10 @@ import { Coupon } from "../models/coupon.model";
 import { CouponUsage } from "../models/couponUsage.model";
 import { VendorWallet } from "../models/vendorWallet.model";
 import { Commission } from "../models/commission.model";
-import { sendRealtimeNotification } from "../utils/notifications";
+import {
+  sendGlobalNotification,
+  sendRealtimeNotification,
+} from "../utils/notifications";
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ["paid", "cancelled"],
@@ -139,10 +142,33 @@ export const checkoutOrder = async (
     await cart.save({ session });
     await session.commitTransaction();
     session.endSession();
-    sendRealtimeNotification(userId, {
+    // sendRealtimeNotification(userId, {
+    //   message: "new order placed",
+    //   orderDetial: order[0],
+    // });
+    sendGlobalNotification({
       message: "new order placed",
       orderDetial: order[0],
     });
+    // Notify customer
+    // await NotificationService.sendToUser({
+    //   userId: req.user._id,
+    //   type: NotificationType.ORDER_PLACED,
+    //   title: 'Order Placed!',
+    //   message: `Your order #${order.orderNumber} has been received.`,
+    //   data: { orderId: order._id },
+    //   channels: ['in_app', 'push', 'email'],
+    // });
+
+    // // Notify vendor (if auto-approved)
+    // await NotificationService.sendToUser({
+    //   userId: product.vendor,
+    //   type: NotificationType.ORDER_PLACED,
+    //   title: 'New Order Received',
+    //   message: `You have a new order #${order.orderNumber}`,
+    //   data: { orderId: order._id },
+    // });
+
     return order[0];
   } catch (error) {
     await session.abortTransaction();

@@ -21,7 +21,7 @@ import adminUsersRoutes from "./admin/routes/users.routes";
 import vendorRoutes from "./vendor/routes/vendor.routes";
 import vendorProductRoutes from "./vendor/routes/vendor-product.routes";
 import vendorStoreRoutes from "./vendor/routes/store.routes";
-
+import notificatonRoutes from "./admin/routes/notification.routes";
 const app: Application = express();
 // webhook routes
 app.use("/api/webhook", webhookRoutes);
@@ -39,10 +39,10 @@ app.get("/", (req, res) => {
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/coupon", couponRoutes);
 app.use("/api/admin/shipment", shipmentRoutes);
-app.use("/api/admin/shipment", shipmentRoutes);
 app.use("/api/admin/permissions", permissionRoutes);
 app.use("/api/admin/roles", rolesRoutes);
 app.use("/api/admin/users", adminUsersRoutes);
+app.use("/api/admin/notification", notificatonRoutes);
 // IMPORTANT: userRoutes MUST be a Router(), not an object!
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);

@@ -8,7 +8,7 @@ export const sendGlobalNotification = async (payload: object) => {
   const io = getIO();
 
   // Method A - most readable
-  io.emit("notification", payload);
+  io.to("global").emit("notification", payload);
 
   // Method B - equivalent (older style)
   // io.sockets.emit("notification", payload);
