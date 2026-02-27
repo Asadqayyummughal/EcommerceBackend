@@ -11,6 +11,26 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "experimentalDecorators": true,
+    "paths": {
+      "core": [
+        "./dist/core"
+      ],
+      "guards": [
+        "./dist/guards"
+      ],
+      "models": [
+        "./dist/models"
+      ],
+      "services": [
+        "./dist/services"
+      ],
+      "shared": [
+        "./dist/shared"
+      ],
+      "ui": [
+        "./dist/ui"
+      ]
+    },
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve"
@@ -22,5 +42,61 @@
     "typeCheckHostBindings": true,
     "strictTemplates": true
   },
-  "files": []
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/store/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/store/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/vendor/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/vendor/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/admin/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/admin/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/shared/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/shared/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/core/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/core/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/ui/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/ui/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/models/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/models/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/services/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/services/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/guards/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/guards/tsconfig.spec.json"
+    }
+  ]
 }
