@@ -1,0 +1,39 @@
+// @use '@angular/material' as mat;
+
+// $primary: mat.define-palette(mat.$indigo-palette);
+// $accent: mat.define-palette(mat.$pink-palette);
+// $warn: mat.define-palette(mat.$red-palette);
+
+// $theme: mat.define-light-theme(
+//   (
+//     color: (
+//       primary: $primary,
+//       accent: $accent,
+//       warn: $warn,
+//     ),
+//   )
+// );
+
+// @include mat.all-component-themes($theme);
+@use '@angular/material' as mat;
+
+// Apply theme globally (usually in :root or html)
+:root,
+html {
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        // or dark
+        primary: mat.$azure-palette,
+        // or your custom color
+        tertiary: mat.$blue-palette,
+        // error, neutral, etc. optional
+      ),
+      typography: Roboto,
+      // or custom
+      density: 0,
+      // -4 to 4 range
+    )
+  );
+}

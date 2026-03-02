@@ -18,9 +18,7 @@
           "builder": "@angular/build:application",
           "options": {
             "browser": "projects/store/src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "projects/store/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -29,9 +27,7 @@
                 "input": "projects/store/public"
               }
             ],
-            "styles": [
-              "projects/store/src/styles.scss"
-            ]
+            "styles": ["projects/store/src/styles.scss"]
           },
           "configurations": {
             "production": {
@@ -75,10 +71,7 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "projects/store/tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -87,9 +80,7 @@
                 "input": "projects/store/public"
               }
             ],
-            "styles": [
-              "projects/store/src/styles.scss"
-            ]
+            "styles": ["projects/store/src/styles.scss"]
           }
         }
       }
@@ -109,9 +100,7 @@
           "builder": "@angular/build:application",
           "options": {
             "browser": "projects/vendor/src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "projects/vendor/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -120,9 +109,7 @@
                 "input": "projects/vendor/public"
               }
             ],
-            "styles": [
-              "projects/vendor/src/styles.scss"
-            ]
+            "styles": ["projects/vendor/src/styles.scss"]
           },
           "configurations": {
             "production": {
@@ -166,10 +153,7 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "projects/vendor/tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -178,9 +162,7 @@
                 "input": "projects/vendor/public"
               }
             ],
-            "styles": [
-              "projects/vendor/src/styles.scss"
-            ]
+            "styles": ["projects/vendor/src/styles.scss"]
           }
         }
       }
@@ -200,9 +182,7 @@
           "builder": "@angular/build:application",
           "options": {
             "browser": "projects/admin/src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "projects/admin/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -211,9 +191,7 @@
                 "input": "projects/admin/public"
               }
             ],
-            "styles": [
-              "projects/admin/src/styles.scss"
-            ]
+            "styles": ["projects/admin/src/styles.scss"]
           },
           "configurations": {
             "production": {
@@ -257,10 +235,7 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "projects/admin/tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -269,9 +244,7 @@
                 "input": "projects/admin/public"
               }
             ],
-            "styles": [
-              "projects/admin/src/styles.scss"
-            ]
+            "styles": ["projects/admin/src/styles.scss"]
           }
         }
       }
@@ -298,10 +271,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/shared/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": ["zone.js", "zone.js/testing"]
           }
         }
       }
@@ -328,10 +298,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/core/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": ["zone.js", "zone.js/testing"]
           }
         }
       }
@@ -358,10 +325,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/ui/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": ["zone.js", "zone.js/testing"]
           }
         }
       }
@@ -388,10 +352,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/models/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": ["zone.js", "zone.js/testing"]
           }
         }
       }
@@ -418,10 +379,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/services/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": ["zone.js", "zone.js/testing"]
           }
         }
       }
@@ -448,10 +406,7 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "projects/guards/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": ["zone.js", "zone.js/testing"]
           }
         }
       }
