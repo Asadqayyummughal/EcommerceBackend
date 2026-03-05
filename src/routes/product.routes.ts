@@ -19,7 +19,7 @@ router.post(
   validate(createProductSchema),
   productControllers.createProduct,
 );
-router.get("/", authMiddleware, productControllers.listProducts);
+router.get("/", productControllers.listProducts);
 
 router.patch(
   "/:id",
