@@ -3,6 +3,7 @@ dotenv.config();
 import { createServer } from "http";
 import app from "./app";
 import { connectDB } from "./config/db";
+import "./cron-jobs";
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
 import { initSocket } from "./socket";
 (async () => {

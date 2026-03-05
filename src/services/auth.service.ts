@@ -37,6 +37,11 @@ export const loginService = async (email: string, password: string) => {
   // tokens
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
+  // Purge already-expired tokens before adding the new one
+  user.refreshTokens = user.refreshTokens.filter(
+    (rt) => rt.expiresAt > new Date(),
+  );
+
   // hash refresh token before storing
   const hashedRefresh = crypto
     .createHash("sha256")
