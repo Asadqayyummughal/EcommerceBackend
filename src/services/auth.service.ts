@@ -29,24 +29,28 @@ export const signupService = async (data: {
   return user;
 };
 
+const MAX_SESSIONS = 5;
+
 export const loginService = async (email: string, password: string) => {
   const user = await User.findOne({ email });
   if (!user) throw new Error("Invalid email or password");
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error("Invalid email or password");
-  // tokens
+
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
-  // Purge already-expired tokens before adding the new one
-  user.refreshTokens = user.refreshTokens.filter(
-    (rt) => rt.expiresAt > new Date(),
-  );
 
-  // hash refresh token before storing
+  const now = new Date();
+  // Remove expired tokens, then cap to MAX_SESSIONS (keep the most recent)
+  user.refreshTokens = user.refreshTokens
+    .filter((rt) => rt.expiresAt > now)
+    .slice(-MAX_SESSIONS + 1);
+
   const hashedRefresh = crypto
     .createHash("sha256")
     .update(refreshToken)
     .digest("hex");
+
   user.refreshTokens.push({
     token: hashedRefresh,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -75,14 +79,26 @@ export const refreshTokenService = async (refreshToken: string) => {
 
   if (!user) throw new Error("Invalid refresh token");
 
-  // 3️⃣ Validate the JWT (expiration)
-  try {
-    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!);
-  } catch (err) {
+  // 3️⃣ Check the DB-stored expiry first (fast, no crypto)
+  const storedToken = user.refreshTokens.find((rt) => rt.token === hashedRefresh);
+  if (!storedToken || storedToken.expiresAt <= new Date()) {
+    // Token is expired — remove it from DB before rejecting
+    user.refreshTokens = user.refreshTokens.filter((rt) => rt.token !== hashedRefresh);
+    await user.save();
     throw new Error("Expired refresh token");
   }
 
-  // 4️⃣ Delete old refresh token (Token Rotation)
+  // 4️⃣ Validate the JWT signature and expiry
+  try {
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!);
+  } catch (err) {
+    // JWT expired or tampered — remove from DB
+    user.refreshTokens = user.refreshTokens.filter((rt) => rt.token !== hashedRefresh);
+    await user.save();
+    throw new Error("Expired refresh token");
+  }
+
+  // 5️⃣ Delete old refresh token (Token Rotation)
   user.refreshTokens = user.refreshTokens.filter(
     (rt) => rt.token !== hashedRefresh,
   );
@@ -180,13 +196,12 @@ export const resetPasswordService = async (
 
   if (!user) throw new Error("Invalid or expired token");
 
-  // Hash new password
-  const bcrypt = await import("bcryptjs");
-  user.password = await bcrypt.default.hash(newPassword, 10);
+  user.password = await bcrypt.hash(newPassword, 10);
 
-  // Clear reset fields
+  // Clear reset fields and invalidate all sessions (force re-login on all devices)
   user.resetPasswordToken = undefined;
   user.resetPasswordExpires = undefined;
+  user.refreshTokens = [];
 
   await user.save();
 
