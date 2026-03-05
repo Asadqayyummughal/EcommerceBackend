@@ -1,27 +1,28 @@
 import { Request, Response } from "express";
 import * as couponService from "../services/coupon.service";
+import { asyncHandler } from "../../utils/asyncHandler";
 
-export const createCoupon = async (req: Request, res: Response) => {
+export const createCoupon = asyncHandler(async (req: Request, res: Response) => {
   const coupon = await couponService.createCoupon(req.body);
-  res.status(201).json(coupon);
-};
+  res.status(201).json({ success: true, message: "Coupon created", data: coupon });
+});
 
-export const getAllCoupons = async (_req: Request, res: Response) => {
+export const getAllCoupons = asyncHandler(async (_req: Request, res: Response) => {
   const coupons = await couponService.getAllCoupons();
-  res.json(coupons);
-};
+  res.json({ success: true, data: coupons });
+});
 
-export const getCouponById = async (req: Request, res: Response) => {
+export const getCouponById = asyncHandler(async (req: Request, res: Response) => {
   const coupon = await couponService.getCouponById(req.params.id);
-  res.json(coupon);
-};
+  res.json({ success: true, data: coupon });
+});
 
-export const updateCoupon = async (req: Request, res: Response) => {
+export const updateCoupon = asyncHandler(async (req: Request, res: Response) => {
   const coupon = await couponService.updateCoupon(req.params.id, req.body);
-  res.json(coupon);
-};
+  res.json({ success: true, message: "Coupon updated", data: coupon });
+});
 
-export const deleteCoupon = async (req: Request, res: Response) => {
+export const deleteCoupon = asyncHandler(async (req: Request, res: Response) => {
   await couponService.deleteCoupon(req.params.id);
-  res.json({ message: "Coupon deleted successfully" });
-};
+  res.json({ success: true, message: "Coupon deleted" });
+});

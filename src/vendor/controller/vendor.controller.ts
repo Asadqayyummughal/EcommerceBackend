@@ -1,152 +1,49 @@
 import { Request, Response } from "express";
 import * as VendorService from "../services/vendor.service";
-export const applyVendor = async (req: Request, res: Response) => {
-  try {
-    let userId = req.user.id;
-    let vendor = await VendorService.applyForVendor(userId);
-    res.status(200).json({
-      success: true,
-      data: vendor,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: false,
-      message: Error.message,
-    });
-  }
-};
+import { asyncHandler } from "../../utils/asyncHandler";
 
-export const getVendorsByStatus = async (req: Request, res: Response) => {
-  try {
-    let status = req.body.status || "pending";
-    let vendor = await VendorService.getVendorsByStatus(status);
-    res.status(200).json({
-      success: true,
-      data: vendor,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: false,
-      message: Error.message,
-    });
-  }
-};
-export const approveVendor = async (req: Request, res: Response) => {
-  try {
-    let vendor = await VendorService.approveVendor(
-      req.params.vendorId,
-      req.user.id,
-    );
-    return res.status(201).json({
-      success: true,
-      data: vendor,
-    });
-  } catch (Error: any) {
-    return res.status(401).json({
-      success: false,
-      message: Error.message,
-    });
-  }
-};
-export const onboardStripe = async (req: Request, res: Response) => {
-  try {
-    let result = await VendorService.enableVendorStripeAccount(req.user.id);
-    return res.status(200).json({
-      success: true,
-      data: result,
-    });
-  } catch (Error: any) {
-    return res.status(401).json({
-      success: false,
-      message: Error.message,
-    });
-  }
-};
-export const requestPayout = async (req: Request, res: Response) => {
-  try {
-    let payout = await VendorService.requestPayout(req.body, req.body.vendorId);
-    return res.status(201).json({
-      success: true,
-      data: payout,
-    });
-  } catch (Error: any) {
-    return res.status(401).json({
-      success: false,
-      message: Error.message,
-    });
-  }
-};
+export const applyVendor = asyncHandler(async (req: Request, res: Response) => {
+  const vendor = await VendorService.applyForVendor(req.user.id);
+  res.status(201).json({ success: true, message: "Vendor application submitted", data: vendor });
+});
 
-export const approvedPayout = async (req: Request, res: Response) => {
-  try {
-    let payout = await VendorService.approvePayout(req.params.id);
-    return res.status(200).json({
-      success: true,
-      data: payout,
-    });
-  } catch (Error: any) {
-    return res.status(401).json({
-      success: false,
-      message: Error.message,
-    });
-  }
-};
-export const listAllPayouts = async (req: Request, res: Response) => {
-  try {
-    let payouts = await VendorService.listAllPayouts();
-    return res.status(200).json({
-      success: true,
-      data: payouts,
-    });
-  } catch (Error: any) {
-    return res.status(401).json({
-      success: false,
-      message: Error.message,
-    });
-  }
-};
+export const getVendorsByStatus = asyncHandler(async (req: Request, res: Response) => {
+  const status = req.query.status || req.body.status || "pending";
+  const vendors = await VendorService.getVendorsByStatus(status as string);
+  res.json({ success: true, data: vendors });
+});
 
-export const payoutVendor = async (req: Request, res: Response) => {
-  try {
-    // const { vendorId, amount } = req.body;
-    let payouts = await VendorService.payoutVendor(req.user.id, req.params.id);
-    return res.status(200).json({
-      success: true,
-      data: payouts,
-    });
-  } catch (Error: any) {
-    return res.status(401).json({
-      success: false,
-      message: Error.message,
-    });
-  }
-};
+export const approveVendor = asyncHandler(async (req: Request, res: Response) => {
+  const vendor = await VendorService.approveVendor(req.params.vendorId, req.user.id);
+  res.json({ success: true, message: "Vendor approved", data: vendor });
+});
 
-export const getWalletDetail = async (req: Request, res: Response) => {
-  try {
-    let wallet = await VendorService.getVendorWalletDetail(req.params.vendorId);
-    return res.status(200).json({
-      success: true,
-      data: wallet,
-    });
-  } catch (Error: any) {
-    return res.status(401).json({
-      success: false,
-      message: Error.message,
-    });
-  }
-};
+export const onboardStripe = asyncHandler(async (req: Request, res: Response) => {
+  const result = await VendorService.enableVendorStripeAccount(req.user.id);
+  res.json({ success: true, data: result });
+});
 
-// export const listVendorProducts = async (req: Request, res: Response) => {
-//   try {
-//     let products = await VendorService.f(
-//       req.params.vendorId,
-//     );
-//     return res.json({
-//       success: true,
-//       products: products,
-//     });
-//   } catch (err: any) {
-//     return res.status(400).json({ success: false, message: err.message });
-//   }
-// };
+export const requestPayout = asyncHandler(async (req: Request, res: Response) => {
+  const payout = await VendorService.requestPayout(req.body, req.body.vendorId);
+  res.status(201).json({ success: true, message: "Payout requested", data: payout });
+});
+
+export const approvedPayout = asyncHandler(async (req: Request, res: Response) => {
+  const payout = await VendorService.approvePayout(req.params.id);
+  res.json({ success: true, message: "Payout approved", data: payout });
+});
+
+export const listAllPayouts = asyncHandler(async (_req: Request, res: Response) => {
+  const payouts = await VendorService.listAllPayouts();
+  res.json({ success: true, data: payouts });
+});
+
+export const payoutVendor = asyncHandler(async (req: Request, res: Response) => {
+  const payouts = await VendorService.payoutVendor(req.user.id, req.params.id);
+  res.json({ success: true, message: "Payout processed", data: payouts });
+});
+
+export const getWalletDetail = asyncHandler(async (req: Request, res: Response) => {
+  const wallet = await VendorService.getVendorWalletDetail(req.params.vendorId);
+  res.json({ success: true, data: wallet });
+});

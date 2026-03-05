@@ -52,8 +52,6 @@ roleSchema.pre("save", function () {
   }
 });
 
-// Optional: index on name (faster lookups)
-roleSchema.index({ name: 1 });
 
 const Role = model<IRole>("Role", roleSchema);
 

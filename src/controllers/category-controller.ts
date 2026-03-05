@@ -1,64 +1,32 @@
 import { Request, Response } from "express";
 import * as categoryService from "../services/category.service";
+import { asyncHandler } from "../utils/asyncHandler";
 
-export const createCategory = async (req: Request, res: Response) => {
-  try {
-    const image = req.file ? req.file.path : null;
+export const createCategory = asyncHandler(async (req: Request, res: Response) => {
+  const image = req.file ? req.file.path : null;
+  const category = await categoryService.createCategoryService({ ...req.body, image });
+  res.status(201).json({ success: true, message: "Category created successfully", data: category });
+});
 
-    const category = await categoryService.createCategoryService({
-      ...req.body,
-      image,
-    });
+export const listCategories = asyncHandler(async (_req: Request, res: Response) => {
+  const categories = await categoryService.listCategoriesService();
+  res.json({ success: true, data: categories });
+});
 
-    return res.json({ message: "Category created successfully", category });
-  } catch (err: any) {
-    return res.status(400).json({ message: err.message });
-  }
-};
+export const getCategory = asyncHandler(async (req: Request, res: Response) => {
+  const category = await categoryService.getCategoryByIdService(req.params.id);
+  res.json({ success: true, data: category });
+});
 
-export const listCategories = async (req: Request, res: Response) => {
-  try {
-    const categories = await categoryService.listCategoriesService();
-    return res.json(categories);
-  } catch (err: any) {
-    return res.status(400).json({ message: err.message });
-  }
-};
+export const updateCategory = asyncHandler(async (req: Request, res: Response) => {
+  const image = req.file ? req.file.path : null;
+  const updateData: any = { ...req.body };
+  if (image) updateData.image = image;
+  const updated = await categoryService.updateCategoryService(req.params.id, updateData);
+  res.json({ success: true, message: "Category updated successfully", data: updated });
+});
 
-export const getCategory = async (req: Request, res: Response) => {
-  try {
-    const category = await categoryService.getCategoryByIdService(
-      req.params.id
-    );
-    return res.json(category);
-  } catch (err: any) {
-    return res.status(404).json({ message: err.message });
-  }
-};
-
-export const updateCategory = async (req: Request, res: Response) => {
-  try {
-    const image = req.file ? req.file.path : null;
-
-    const updateData = { ...req.body };
-    if (image) updateData.image = image;
-
-    const updated = await categoryService.updateCategoryService(
-      req.params.id,
-      updateData
-    );
-
-    return res.json({ message: "Category updated successfully", updated });
-  } catch (err: any) {
-    return res.status(400).json({ message: err.message });
-  }
-};
-
-export const deleteCategory = async (req: Request, res: Response) => {
-  try {
-    await categoryService.deleteCategoryService(req.params.id);
-    return res.json({ message: "Category deleted successfully" });
-  } catch (err: any) {
-    return res.status(400).json({ message: err.message });
-  }
-};
+export const deleteCategory = asyncHandler(async (req: Request, res: Response) => {
+  await categoryService.deleteCategoryService(req.params.id);
+  res.json({ success: true, message: "Category deleted successfully" });
+});

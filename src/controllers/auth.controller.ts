@@ -7,83 +7,41 @@ import {
   forgotPasswordService,
   resetPasswordService,
 } from "../services/auth.service";
-export const signup = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { name, email, password } = req.body;
+import { asyncHandler } from "../utils/asyncHandler";
 
-    if (!name || !email || !password) {
-      res.status(400).json({ success: false, message: "All fields required" });
-      return;
-    }
-    const user = await signupService({ name, email, password });
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      user,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: (error as Error).message,
-    });
-  }
-};
+export const signup = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, password } = req.body;
+  const user = await signupService({ name, email, password });
+  res.status(201).json({ success: true, message: "User registered successfully", data: user });
+});
 
-export const login = async (req: Request, res: Response) => {
+export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  // tokens
-  let { user, accessToken, refreshToken } = await loginService(email, password);
-  return res.json({
-    accessToken,
-    refreshToken,
-    user: user,
-  });
-};
-export const refreshToken = async (req: Request, res: Response) => {
-  try {
-    const { refreshToken } = req.body;
+  const { user, accessToken, refreshToken } = await loginService(email, password);
+  res.json({ success: true, data: { user, accessToken, refreshToken } });
+});
 
-    const result = await refreshTokenService(refreshToken);
+export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+  const result = await refreshTokenService(refreshToken);
+  res.json({ success: true, data: { accessToken: result.accessToken, refreshToken: result.refreshToken } });
+});
 
-    return res.json({
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-    });
-  } catch (error: any) {
-    return res.status(401).json({ message: error.message });
-  }
-};
-export const logout = async (req: Request, res: Response) => {
-  try {
-    const { refreshToken } = req.body;
-    await logoutService(refreshToken);
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+  await logoutService(refreshToken);
+  res.json({ success: true, message: "Logged out successfully" });
+});
 
-    return res.json({ message: "Logged out successfully" });
-  } catch (error: any) {
-    return res.status(400).json({ message: error.message });
-  }
-};
-export const forgotPassword = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  await forgotPasswordService(email);
+  res.json({ success: true, message: "Password reset link sent to your email" });
+});
 
-    await forgotPasswordService(email);
-
-    return res.json({
-      message: "Password reset link sent to your email",
-    });
-  } catch (error: any) {
-    return res.status(400).json({ message: error.message });
-  }
-};
-
-export const resetPassword = async (req: Request, res: Response) => {
-  try {
-    const { token } = req.params;
-    const { newPassword } = req.body;
-    await resetPasswordService(token, newPassword);
-    return res.json({ message: "Password reset successful" });
-  } catch (error: any) {
-    return res.status(400).json({ message: error.message });
-  }
-};
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+  await resetPasswordService(token, newPassword);
+  res.json({ success: true, message: "Password reset successful" });
+});

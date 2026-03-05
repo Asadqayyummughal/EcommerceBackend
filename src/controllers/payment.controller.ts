@@ -1,19 +1,15 @@
 import { Request, Response } from "express";
-import * as paymentController from "../services/payment.service";
+import * as paymentService from "../services/payment.service";
+import { asyncHandler } from "../utils/asyncHandler";
 
-export const createStripeIntent = async (req: Request, res: Response) => {
+export const createStripeIntent = asyncHandler(async (req: Request, res: Response) => {
   const { orderId } = req.body;
+  const result = await paymentService.createStripePaymentIntent(orderId);
+  res.json({ success: true, data: result });
+});
 
-  const result = await paymentController.createStripePaymentIntent(orderId);
-
-  res.json(result);
-};
-export const confirmPayment = async (req: Request, res: Response) => {
+export const confirmPayment = asyncHandler(async (req: Request, res: Response) => {
   const { paymentIntentId, payment_method } = req.body;
-  const result = await paymentController.confirmPayment(
-    paymentIntentId,
-    payment_method
-  );
-
-  res.json(result);
-};
+  const result = await paymentService.confirmPayment(paymentIntentId, payment_method);
+  res.json({ success: true, data: result });
+});

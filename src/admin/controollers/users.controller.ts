@@ -1,13 +1,8 @@
-import Role from "../../models/role.model";
-import User, { IUser } from "../../models/user.model";
 import * as userService from "../services/users.service";
 import { Request, Response } from "express";
+import { asyncHandler } from "../../utils/asyncHandler";
 
-export const getUsers = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const users = await userService.getAllUsersService();
-    res.json({ success: true, users });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
-  }
-};
+export const getUsers = asyncHandler(async (_req: Request, res: Response) => {
+  const users = await userService.getAllUsersService();
+  res.json({ success: true, data: users });
+});

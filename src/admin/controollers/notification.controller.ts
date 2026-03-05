@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-
 import * as notificationsService from "../services/notification.service";
-export const broadcastNotification = async (req: Request, res: Response) => {
-  const { title, message } = req.body;
-  console.log("here is title and message==================>", title, message);
+import { asyncHandler } from "../../utils/asyncHandler";
 
-  notificationsService.sendGlobalNotification(title, message);
-};
+export const broadcastNotification = asyncHandler(async (req: Request, res: Response) => {
+  const { title, message } = req.body;
+  await notificationsService.sendGlobalNotification(title, message);
+  res.json({ success: true, message: "Notification sent" });
+});

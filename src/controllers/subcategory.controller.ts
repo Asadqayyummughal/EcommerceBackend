@@ -1,63 +1,32 @@
 import { Request, Response } from "express";
 import * as subCategoryService from "../services/subcatrgory.service";
+import { asyncHandler } from "../utils/asyncHandler";
 
-export const createSubCategory = async (req: Request, res: Response) => {
-  try {
-    const image = req.file ? req.file.path : null;
+export const createSubCategory = asyncHandler(async (req: Request, res: Response) => {
+  const image = req.file ? req.file.path : null;
+  const sub = await subCategoryService.createSubCategoryService({ ...req.body, image });
+  res.status(201).json({ success: true, message: "Subcategory created successfully", data: sub });
+});
 
-    const sub = await subCategoryService.createSubCategoryService({
-      ...req.body,
-      image,
-    });
+export const listSubCategories = asyncHandler(async (_req: Request, res: Response) => {
+  const list = await subCategoryService.listSubCategoriesService();
+  res.json({ success: true, data: list });
+});
 
-    return res.json({ message: "Subcategory created successfully", sub });
-  } catch (err: any) {
-    return res.status(400).json({ message: err.message });
-  }
-};
+export const getSubCategory = asyncHandler(async (req: Request, res: Response) => {
+  const sub = await subCategoryService.getSubCategoryByIdService(req.params.id);
+  res.json({ success: true, data: sub });
+});
 
-export const listSubCategories = async (req: Request, res: Response) => {
-  try {
-    const list = await subCategoryService.listSubCategoriesService();
-    return res.json(list);
-  } catch (err: any) {
-    return res.status(400).json({ message: err.message });
-  }
-};
+export const updateSubCategory = asyncHandler(async (req: Request, res: Response) => {
+  const image = req.file ? req.file.path : null;
+  const updateData: any = { ...req.body };
+  if (image) updateData.image = image;
+  const updated = await subCategoryService.updateSubCategoryService(req.params.id, updateData);
+  res.json({ success: true, message: "Subcategory updated successfully", data: updated });
+});
 
-export const getSubCategory = async (req: Request, res: Response) => {
-  try {
-    const sub = await subCategoryService.getSubCategoryByIdService(
-      req.params.id
-    );
-    return res.json(sub);
-  } catch (err: any) {
-    return res.status(404).json({ message: err.message });
-  }
-};
-
-export const updateSubCategory = async (req: Request, res: Response) => {
-  try {
-    const image = req.file ? req.file.path : null;
-    const updateData = { ...req.body };
-    if (image) updateData.image = image;
-
-    const updated = await subCategoryService.updateSubCategoryService(
-      req.params.id,
-      updateData
-    );
-
-    return res.json({ message: "Subcategory updated successfully", updated });
-  } catch (err: any) {
-    return res.status(400).json({ message: err.message });
-  }
-};
-
-export const deleteSubCategory = async (req: Request, res: Response) => {
-  try {
-    await subCategoryService.deleteSubCategoryService(req.params.id);
-    return res.json({ message: "Subcategory deleted successfully" });
-  } catch (err: any) {
-    return res.status(400).json({ message: err.message });
-  }
-};
+export const deleteSubCategory = asyncHandler(async (req: Request, res: Response) => {
+  await subCategoryService.deleteSubCategoryService(req.params.id);
+  res.json({ success: true, message: "Subcategory deleted successfully" });
+});

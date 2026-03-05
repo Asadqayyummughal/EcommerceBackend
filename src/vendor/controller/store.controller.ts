@@ -1,123 +1,43 @@
 import { Request, Response } from "express";
 import * as storeService from "../services/store.service";
-export const createStore = async (req: Request, res: Response) => {
-  try {
-    let store = await storeService.createStore(req.user.id, req.body);
-    res.status(201).json({
-      success: true,
-      data: store,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: false,
-      Error: Error.message,
-    });
-  }
-};
+import { asyncHandler } from "../../utils/asyncHandler";
 
-export const approveStore = async (req: Request, res: Response) => {
-  try {
-    let store = await storeService.approveStore(req.params.id, req.body.status);
-    res.status(200).json({
-      success: true,
-      data: store,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: true,
-      Error: Error.message,
-    });
-  }
-};
-export const listStores = async (req: Request, res: Response) => {
-  try {
-    let stores = await storeService.listAllStores();
-    res.status(200).json({
-      success: true,
-      data: stores,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: false,
-      Error: Error.message,
-    });
-  }
-};
-export const getStoreByUserId = async (req: Request, res: Response) => {
-  try {
-    let store = await storeService.getStoreByUserId(req.user.id);
-    res.status(200).json({
-      success: true,
-      data: store,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: false,
-      Error: Error.message,
-    });
-  }
-};
+export const createStore = asyncHandler(async (req: Request, res: Response) => {
+  const store = await storeService.createStore(req.user.id, req.body);
+  res.status(201).json({ success: true, message: "Store created", data: store });
+});
 
-export const updateStore = async (req: Request, res: Response) => {
-  try {
-    let store = await storeService.updateStore(
-      req.user.id,
-      req.params.id,
-      req.body,
-    );
-    res.status(201).json({
-      success: true,
-      data: store,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: false,
-      Error: Error.message,
-    });
-  }
-};
-export const getStoreAnalytics = async (req: Request, res: Response) => {
-  try {
-    let store = await storeService.getStoreAnalytics(req.params.id);
-    res.status(201).json({
-      success: true,
-      data: store,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: false,
-      Error: Error.message,
-    });
-  }
-};
+export const approveStore = asyncHandler(async (req: Request, res: Response) => {
+  const store = await storeService.approveStore(req.params.id, req.body.status);
+  res.json({ success: true, message: "Store status updated", data: store });
+});
 
-export const listStoreProducts = async (req: Request, res: Response) => {
-  try {
-    let storeProducts = await storeService.listStoreProducts(req.params.id);
-    res.status(201).json({
-      success: true,
-      data: storeProducts,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: false,
-      Error: Error.message,
-    });
-  }
-};
-export const listStoreOrders = async (req: Request, res: Response) => {
-  try {
-    let storeProducts = await storeService.getOrdersByVendorWithAggregation(
-      req.params.vendorId,
-    );
-    res.status(201).json({
-      success: true,
-      data: storeProducts,
-    });
-  } catch (Error: any) {
-    res.status(400).json({
-      success: false,
-      Error: Error.message,
-    });
-  }
-};
+export const listStores = asyncHandler(async (_req: Request, res: Response) => {
+  const stores = await storeService.listAllStores();
+  res.json({ success: true, data: stores });
+});
+
+export const getStoreByUserId = asyncHandler(async (req: Request, res: Response) => {
+  const store = await storeService.getStoreByUserId(req.user.id);
+  res.json({ success: true, data: store });
+});
+
+export const updateStore = asyncHandler(async (req: Request, res: Response) => {
+  const store = await storeService.updateStore(req.user.id, req.params.id, req.body);
+  res.json({ success: true, message: "Store updated", data: store });
+});
+
+export const getStoreAnalytics = asyncHandler(async (req: Request, res: Response) => {
+  const analytics = await storeService.getStoreAnalytics(req.params.id);
+  res.json({ success: true, data: analytics });
+});
+
+export const listStoreProducts = asyncHandler(async (req: Request, res: Response) => {
+  const products = await storeService.listStoreProducts(req.params.id);
+  res.json({ success: true, data: products });
+});
+
+export const listStoreOrders = asyncHandler(async (req: Request, res: Response) => {
+  const orders = await storeService.getOrdersByVendorWithAggregation(req.params.vendorId);
+  res.json({ success: true, data: orders });
+});

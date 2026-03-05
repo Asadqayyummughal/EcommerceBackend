@@ -1,51 +1,26 @@
 import { Request, Response } from "express";
 import * as userService from "../services/user.service";
+import { asyncHandler } from "../utils/asyncHandler";
 
-export const getProfileController = async (req: Request, res: Response) => {
-  try {
-    const user = await userService.getProfile(req.user.id);
-    res.json(user);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+export const getProfileController = asyncHandler(async (req: Request, res: Response) => {
+  const user = await userService.getProfile(req.user.id);
+  res.json({ success: true, data: user });
+});
+
+export const updateProfileController = asyncHandler(async (req: Request, res: Response) => {
+  const user = await userService.updateProfile(req.user.id, req.body);
+  res.json({ success: true, message: "Profile updated", data: user });
+});
+
+export const changePasswordController = asyncHandler(async (req: Request, res: Response) => {
+  await userService.changePassword(req.user.id, req.body.oldPassword, req.body.newPassword);
+  res.json({ success: true, message: "Password updated successfully" });
+});
+
+export const uploadImageController = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "No file uploaded" });
   }
-};
-
-export const updateProfileController = async (req: Request, res: Response) => {
-  try {
-    const user = await userService.updateProfile(req.body.id, req.body);
-    res.json(user);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-export const changePasswordController = async (req: Request, res: Response) => {
-  try {
-    await userService.changePassword(
-      req.body.id,
-      req.body.oldPassword,
-      req.body.newPassword,
-    );
-    res.json({ message: "Password updated successfully" });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-export const uploadImageController = async (req: Request, res: Response) => {
-  try {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-    let id = req.params.id;
-
-    if (!id) return res.status(400).json({ message: "userId missing" });
-    if (id) {
-      const user = await userService.uploadProfileImage(id, req.file.path);
-      res.json({
-        message: "Image updated",
-        image: user.image,
-      });
-    }
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+  const user = await userService.uploadProfileImage(req.params.id, req.file.path);
+  res.json({ success: true, message: "Image updated", data: { image: user.image } });
+});

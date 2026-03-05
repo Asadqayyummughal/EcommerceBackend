@@ -1,5 +1,6 @@
 import express, { Application } from "express";
 import cors from "cors";
+import { errorHandler } from "./middlewares/errorHandler.middleware";
 import userRoutes from "./routes/user.routes";
 import authRoutes from "./routes/auth.routes";
 import productRoutes from "./routes/product.routes";
@@ -58,5 +59,8 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/vendor", vendorRoutes);
 app.use("/api/vendor/products", vendorProductRoutes);
 app.use("/api/vendor/store", vendorStoreRoutes);
+
+// Global error handler — must be last
+app.use(errorHandler);
 
 export default app;

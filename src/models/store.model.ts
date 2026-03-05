@@ -53,7 +53,6 @@ const StoreSchema = new Schema<IStore>(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
 
     logo: {

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\study material\\\\backend\\\\ecommerce-backend-apis\" && npm run build 2>&1)",
+      "Bash(cd \"C:\\\\study material\\\\backend\\\\ecommerce-backend-apis\" && npx tsc --noEmit 2>&1 | grep -v \"seed.roles\\\\|cancell-order\")"
+    ]
+  }
+}

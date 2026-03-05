@@ -1,7 +1,8 @@
 import * as dashboardService from "../services/dashboard.service";
 import { Request, Response } from "express";
+import { asyncHandler } from "../../utils/asyncHandler";
 
-export const getDashboardStats = async (req: Request, res: Response) => {
+export const getDashboardStats = asyncHandler(async (_req: Request, res: Response) => {
   const [sales, orderStatus, topProducts, lowStock] = await Promise.all([
     dashboardService.salesOverview(),
     dashboardService.ordersByStatus(),
@@ -10,9 +11,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
   ]);
 
   res.json({
-    sales,
-    orderStatus,
-    topProducts,
-    lowStock,
+    success: true,
+    data: { sales, orderStatus, topProducts, lowStock },
   });
-};
+});
