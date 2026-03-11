@@ -1,4 +1,5 @@
 import Cart from "../models/cart.model";
+import { AppError } from "../utils/AppError";
 import Product from "../models/product.model";
 import Order, { IOrder, IOrderItem, OrderStatus } from "../models/order.model";
 import mongoose, { ClientSession } from "mongoose";
@@ -41,28 +42,28 @@ export const checkoutOrder = async (
   session.startTransaction();
   try {
     const cart = await Cart.findOne({ user: userId }).session(session); //user cart
-    if (!cart || cart.items.length === 0) throw new Error("Cart is empty"); //validate cart
+    if (!cart || cart.items.length === 0) throw new AppError("Cart is empty", 400); //validate cart
     const orderItems: IOrderItem[] = [];
     let subtotal = 0;
     for (const item of cart.items) {
       const product = await Product.findById(item.product).session(session);
-      if (!product || !product.isActive) throw new Error("Product unavailable");
+      if (!product || !product.isActive) throw new AppError("Product unavailable", 400);
       let price = product.salePrice ?? product.price;
       if (item.variantSku) {
         const variant = product.variants?.find(
           (v) => v.sku === item.variantSku,
         );
-        if (!variant) throw new Error("Variant not found");
+        if (!variant) throw new AppError("Variant not found", 404);
         const available = variant.stock - (variant.reservedStock ?? 0);
         if (available < item.quantity) {
-          throw new Error("Variant out of stock");
+          throw new AppError("Variant out of stock", 400);
         }
         price = variant.price ?? price;
         variant.reservedStock = (variant.reservedStock ?? 0) + item.quantity;
       } else {
         const available = product.stock - (product.reservedStock ?? 0);
         if (available < item.quantity) {
-          throw new Error("Product out of stock");
+          throw new AppError("Product out of stock", 400);
         }
         product.reservedStock = (product.reservedStock ?? 0) + item.quantity;
       }
@@ -89,7 +90,7 @@ export const checkoutOrder = async (
     let discountAmount = 0;
     if (coupon) {
       const eligibleItems = getEligibleItems(orderItems, coupon);
-      if (eligibleItems.length === 0) throw new Error("Coupon not applicable");
+      if (eligibleItems.length === 0) throw new AppError("Coupon not applicable", 400);
       const discountData = calculateDiscount(coupon, eligibleItems);
       discountAmount = discountData.discount;
       totalAmount -= discountAmount;
@@ -183,11 +184,11 @@ export const getUserOrders = async (userId: string) => {
 
 export const getOrderById = async (user: AuthUser, orderId: string) => {
   const order = await Order.findById(orderId);
-  if (!order) throw new Error("Order not found");
+  if (!order) throw new AppError("Order not found", 404);
   // User can only view their own order
   if (order.user.toString() !== user.id) {
     //&& user.role !== "admin"
-    throw new Error("Unauthorized");
+    throw new AppError("Unauthorized", 403);
   }
   return order;
 };
@@ -197,15 +198,15 @@ export const cancelOrder = async (userId: string, orderId: string) => {
   session.startTransaction();
   try {
     const order = await Order.findById(orderId).session(session);
-    if (!order) throw new Error("Order not found");
+    if (!order) throw new AppError("Order not found", 404);
     // 🔐 Ownership check
-    if (order.user.toString() !== userId) throw new Error("Unauthorized");
+    if (order.user.toString() !== userId) throw new AppError("Unauthorized", 403);
     // 🚫 Prevent invalid cancellations
     if (["shipped", "delivered"].includes(order.status)) {
-      throw new Error("Shipped orders cannot be cancelled");
+      throw new AppError("Shipped orders cannot be cancelled", 400);
     }
     if (order.status === "cancelled") {
-      throw new Error("Order already cancelled");
+      throw new AppError("Order already cancelled", 400);
     }
     // 🔁 Refund if paid
     if (order.paymentStatus === "paid") {
@@ -240,13 +241,14 @@ export const updateOrderStatus = async (
     session.startTransaction();
 
     const order = await Order.findById(orderId).session(session);
-    if (!order) throw new Error("Order not found");
+    if (!order) throw new AppError("Order not found", 404);
 
     const allowedNextStatuses =
       ALLOWED_TRANSITIONS[order.status as OrderStatus] || [];
     if (!allowedNextStatuses.includes(newStatus)) {
-      throw new Error(
+      throw new AppError(
         `Invalid status transition: ${order.status} → ${newStatus}`,
+        400,
       );
     }
 
@@ -298,7 +300,7 @@ export const getOrderTracking = async (orderId: string, userId: string) => {
     _id: orderId,
     user: userId,
   }).select("status shipment orderEvents");
-  if (!order) throw new Error("Order not found");
+  if (!order) throw new AppError("Order not found", 404);
   return order;
 };
 

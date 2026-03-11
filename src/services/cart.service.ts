@@ -2,6 +2,7 @@ import mongoose, { Types } from "mongoose";
 import Cart from "../models/cart.model";
 import Product from "../models/product.model";
 import { calculateCartTotals } from "../utils/cart.utils";
+import { AppError } from "../utils/AppError";
 
 interface SyncItem {
   productId: string;
@@ -22,18 +23,19 @@ export const addToCartService = async (
 ) => {
   const product = await Product.findById(productId);
   if (!product || !product.isActive) {
-    throw new Error("Product not available");
+    throw new AppError("Product not available", 404);
   }
   if (product.vendor && product.vendor.toString() === roleId) {
-    throw new Error("You cannot buy your own product");
+    throw new AppError("You cannot buy your own product", 403);
   }
   let price = product.salePrice ?? product.price;
   if (variantSku) {
     const variant = product.variants?.find((v) => v.sku === variantSku);
-    if (!variant) throw new Error("Variant not found");
+    if (!variant) throw new AppError("Variant not found", 404);
     if (variant.stock && variant.stock < quantity)
-      throw new Error(
-        `Less stock available we have just ${variant.stock} ${product.title} available`,
+      throw new AppError(
+        `Only ${variant.stock} unit(s) of "${product.title}" available`,
+        400,
       );
     price = variant.price ?? price;
   }
@@ -70,11 +72,11 @@ export const updateCartItemService = async (
   variantSku?: string,
 ) => {
   const cart = await Cart.findOne({ user: userId });
-  if (!cart) throw new Error("Cart not found");
+  if (!cart) throw new AppError("Cart not found", 404);
   const item = cart.items.find(
     (i) => i.product.toString() === productId && i.variantSku === variantSku,
   );
-  if (!item) throw new Error("Item not found in cart");
+  if (!item) throw new AppError("Item not found in cart", 404);
   item.quantity = quantity;
   cart.set(calculateCartTotals(cart.items));
   await cart.save();
@@ -88,12 +90,12 @@ export const removeCartItemService = async (
 ) => {
   // Validate ObjectId format early
   if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(productId)) {
-    throw new Error("Invalid user ID or product ID");
+    throw new AppError("Invalid user ID or product ID", 400);
   }
 
   const cart = await Cart.findOne({ user: userId });
   if (!cart) {
-    throw new Error("Cart not found");
+    throw new AppError("Cart not found", 404);
   }
 
   // Find the index of the item to remove
@@ -106,11 +108,12 @@ export const removeCartItemService = async (
   // If no matching item found, throw a clear error
   if (itemIndex === -1) {
     if (variantSku) {
-      throw new Error(
+      throw new AppError(
         `Item with product ID "${productId}" and variant SKU "${variantSku}" not found in cart`,
+        404,
       );
     } else {
-      throw new Error(`Product with ID "${productId}" not found in cart`);
+      throw new AppError(`Product with ID "${productId}" not found in cart`, 404);
     }
   }
 

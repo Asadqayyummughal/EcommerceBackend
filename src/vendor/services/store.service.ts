@@ -5,6 +5,7 @@ import Order from "../../models/order.model";
 import mongoose from "mongoose";
 import Product from "../../models/product.model";
 import { toObjectId } from "../../utils/helpers.utils";
+import { AppError } from "../../utils/AppError";
 
 export const createStore = async (userId: string, body: IStore) => {
   const { name, description } = body;
@@ -14,12 +15,12 @@ export const createStore = async (userId: string, body: IStore) => {
     status: "active",
   });
   if (!vendor) {
-    throw new Error("Vendor account not approved");
+    throw new AppError("Vendor account not found or not approved", 403);
   }
   // 2️⃣ One store per vendor
   const existingStore = await Store.findOne({ vendor: vendor._id });
   if (existingStore) {
-    throw new Error("Store already exists");
+    throw new AppError("Store already exists for this vendor", 409);
   }
   // 3️⃣ Generate slug
   let baseSlug = slugify(name, {
@@ -46,7 +47,7 @@ export const approveStore = async (
   status: STORE_STATUS_TYPE,
 ) => {
   const store = await Store.findById({ _id: storeId });
-  if (!store) throw new Error("Store doesn't exists");
+  if (!store) throw new AppError("Store not found", 404);
   store.status = status;
   return await store.save();
 };
@@ -57,11 +58,11 @@ export const listAllStores = async () => {
 export const getStoreByUserId = async (userId: string) => {
   const vendor = await Vendor.findOne({ user: userId });
   if (!vendor) {
-    throw new Error("Vendor not found for this user");
+    throw new AppError("Vendor not found", 404);
   }
   const store = await Store.findOne({ vendor: vendor._id });
   if (!store) {
-    throw new Error("Store not found or does not belong to you");
+    throw new AppError("Store not found", 404);
   }
 
   return store;
@@ -74,11 +75,11 @@ export const updateStore = async (
 ) => {
   const vendor = await Vendor.findOne({ user: userId });
   if (!vendor) {
-    throw new Error("Vendor not found for this user");
+    throw new AppError("Vendor not found", 404);
   }
   const store = await Store.findOne({ _id: storeId, vendor: vendor._id });
   if (!store) {
-    throw new Error("Store not found or does not belong to you");
+    throw new AppError("Store not found or does not belong to you", 404);
   }
   // 3. Add updatedBy
   updateData.updatedBy = vendor.user;

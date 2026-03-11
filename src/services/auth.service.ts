@@ -8,6 +8,8 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "./email.service";
 import { validateEmailDomain } from "../utils/validateEmailDomain";
+import { AppError } from "../utils/AppError";
+
 export const signupService = async (data: {
   name: string;
   email: string;
@@ -17,7 +19,7 @@ export const signupService = async (data: {
   await validateEmailDomain(email);
   // Check if user exists
   const existing = await User.findOne({ email });
-  if (existing) throw new Error("Email already exists");
+  if (existing) throw new AppError("Email already exists", 409);
   // Hash password
   const hashedPass = await bcrypt.hash(password, 10);
   const user = await User.create({
@@ -33,9 +35,9 @@ const MAX_SESSIONS = 5;
 
 export const loginService = async (email: string, password: string) => {
   const user = await User.findOne({ email });
-  if (!user) throw new Error("Invalid email or password");
+  if (!user) throw new AppError("Invalid email or password", 401);
   const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) throw new Error("Invalid email or password");
+  if (!isMatch) throw new AppError("Invalid email or password", 401);
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
@@ -66,7 +68,7 @@ export const loginService = async (email: string, password: string) => {
 
 // services/auth.service.ts
 export const refreshTokenService = async (refreshToken: string) => {
-  if (!refreshToken) throw new Error("Refresh token required");
+  if (!refreshToken) throw new AppError("Refresh token required", 400);
   // 1️⃣ Convert incoming token to hashed form
   const hashedRefresh = crypto
     .createHash("sha256")
@@ -77,7 +79,7 @@ export const refreshTokenService = async (refreshToken: string) => {
     "refreshTokens.token": hashedRefresh,
   });
 
-  if (!user) throw new Error("Invalid refresh token");
+  if (!user) throw new AppError("Invalid refresh token", 401);
 
   // 3️⃣ Check the DB-stored expiry first (fast, no crypto)
   const storedToken = user.refreshTokens.find((rt) => rt.token === hashedRefresh);
@@ -85,7 +87,7 @@ export const refreshTokenService = async (refreshToken: string) => {
     // Token is expired — remove it from DB before rejecting
     user.refreshTokens = user.refreshTokens.filter((rt) => rt.token !== hashedRefresh);
     await user.save();
-    throw new Error("Expired refresh token");
+    throw new AppError("Expired refresh token", 401);
   }
 
   // 4️⃣ Validate the JWT signature and expiry
@@ -95,7 +97,7 @@ export const refreshTokenService = async (refreshToken: string) => {
     // JWT expired or tampered — remove from DB
     user.refreshTokens = user.refreshTokens.filter((rt) => rt.token !== hashedRefresh);
     await user.save();
-    throw new Error("Expired refresh token");
+    throw new AppError("Expired refresh token", 401);
   }
 
   // 5️⃣ Delete old refresh token (Token Rotation)
@@ -126,7 +128,7 @@ export const refreshTokenService = async (refreshToken: string) => {
   };
 };
 export const logoutService = async (refreshToken: string) => {
-  if (!refreshToken) throw new Error("Refresh token required");
+  if (!refreshToken) throw new AppError("Refresh token required", 400);
 
   const hashed = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
@@ -135,7 +137,7 @@ export const logoutService = async (refreshToken: string) => {
     "refreshTokens.token": hashed,
   });
 
-  if (!user) throw new Error("Invalid refresh token");
+  if (!user) throw new AppError("Invalid refresh token", 401);
 
   // Remove this refresh token (logout)
   user.refreshTokens = user.refreshTokens.filter((rt) => rt.token !== hashed);
@@ -146,7 +148,7 @@ export const logoutService = async (refreshToken: string) => {
 
 export const forgotPasswordService = async (email: string) => {
   const user = await User.findOne({ email });
-  if (!user) throw new Error("User not found");
+  if (!user) throw new AppError("User not found", 404);
 
   const resetToken = crypto.randomBytes(32).toString("hex");
 
@@ -194,7 +196,7 @@ export const resetPasswordService = async (
     resetPasswordExpires: { $gt: Date.now() },
   });
 
-  if (!user) throw new Error("Invalid or expired token");
+  if (!user) throw new AppError("Invalid or expired token", 400);
 
   user.password = await bcrypt.hash(newPassword, 10);
 

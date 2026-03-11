@@ -38,7 +38,7 @@ router.delete(
 );
 router.get(
   "/:id",
-  authMiddleware,
+  //authMiddleware,
   //   roleMiddleware
   productControllers.getProduct,
 );

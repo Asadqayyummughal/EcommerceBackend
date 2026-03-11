@@ -99,3 +99,122 @@ FRONTEND_URL=http://localhost:4200/
 | `/api/wishlist` | Wishlists |
 | `/api/vendor` | Vendor profiles + store + products |
 | `/api/admin/*` | Admin dashboard, coupons, shipments, roles, permissions, users, notifications |
+
+## Vendor Dashboard UI Plan
+
+**Framework:** Angular (port 4200) | **Styling:** Tailwind CSS | **HTTP:** Angular HttpClient with JWT interceptor
+
+### Project Structure
+```
+src/app/
+├── core/
+│   ├── interceptors/
+│   │   ├── auth.interceptor.ts        # Attaches Bearer token to every request
+│   │   └── refresh.interceptor.ts     # On 401 → call /api/auth/refresh → retry
+│   ├── guards/
+│   │   ├── auth.guard.ts              # Checks JWT exists + role = "vendor"
+│   │   └── vendor-status.guard.ts     # Checks vendor.status === "active"
+│   └── services/
+│       ├── auth.service.ts            # login, logout, token storage
+│       └── vendor.service.ts          # vendor profile, status, vendorId
+├── shared/
+│   ├── components/
+│   │   ├── status-badge/              # Reusable badge for pending/active/rejected etc.
+│   │   ├── image-upload/              # Drag-drop, max 6 files, preview grid
+│   │   └── sidebar-layout/            # Vendor dashboard shell with sidebar nav
+│   └── models/
+│       ├── vendor.model.ts
+│       ├── store.model.ts
+│       ├── product.model.ts
+│       ├── order.model.ts
+│       ├── wallet.model.ts
+│       └── payout.model.ts
+└── features/
+    ├── vendor-apply/                  # Apply to become vendor
+    ├── vendor-pending/                # Waiting for admin approval
+    └── vendor-dashboard/              # All dashboard features (auth-gated)
+        ├── overview/
+        ├── store/
+        ├── products/
+        ├── orders/
+        └── payouts/
+```
+
+### Pages & Routes
+
+| Route | Component | Guard | API Call |
+|-------|-----------|-------|----------|
+| `/vendor/apply` | VendorApplyComponent | AuthGuard (role=user) | `POST /api/vendor` |
+| `/vendor/pending` | VendorPendingComponent | AuthGuard | — |
+| `/vendor/dashboard` | OverviewComponent | VendorStatusGuard | wallet + analytics |
+| `/vendor/store/create` | StoreCreateComponent | VendorStatusGuard | `POST /api/vendor/store` |
+| `/vendor/store/edit` | StoreEditComponent | VendorStatusGuard | `PUT /api/vendor/store/:id` |
+| `/vendor/store/analytics` | StoreAnalyticsComponent | VendorStatusGuard | `GET /api/vendor/store/:id/analytics` |
+| `/vendor/products` | ProductListComponent | VendorStatusGuard | `GET /api/vendor/store/:id/products` |
+| `/vendor/products/new` | ProductCreateComponent | VendorStatusGuard | `POST /api/vendor/products` (multipart) |
+| `/vendor/products/:id/edit` | ProductEditComponent | VendorStatusGuard | `PUT /api/products/:id` |
+| `/vendor/orders` | OrderListComponent | VendorStatusGuard | `GET /api/vendor/store/:vendorId/orders` |
+| `/vendor/orders/:id` | OrderDetailComponent | VendorStatusGuard | order detail view |
+| `/vendor/wallet` | WalletComponent | VendorStatusGuard | `GET /api/vendor/wallet/:vendorId` |
+| `/vendor/payouts` | PayoutListComponent | VendorStatusGuard | `GET /api/vendor/payouts/` |
+| `/vendor/payouts/request` | PayoutRequestComponent | VendorStatusGuard | `POST /api/vendor/payouts/request` |
+| `/vendor/stripe/onboard` | StripeOnboardComponent | VendorStatusGuard | `POST /api/vendor/stripe/onboard` |
+
+### Vendor Lifecycle & UI State Machine
+```
+User logs in
+    ↓
+role = "vendor"?
+    ↓ NO → redirect to /vendor/apply (POST /api/vendor)
+    ↓ YES
+vendor.status check
+    ├── "pending"    → /vendor/pending (info screen, no dashboard)
+    ├── "suspended"  → show suspension message
+    ├── "rejected"   → show rejection reason + reapply option
+    └── "active"     → /vendor/dashboard (full access)
+```
+
+### Dashboard Overview Cards (Home Page)
+- **Wallet Balance** — from `GET /api/vendor/wallet/:vendorId` → `balance`
+- **Locked Balance** — `lockedBalance` (funds in pending payout)
+- **Total Earned** — `totalEarned`
+- **Total Orders** — from store analytics `totalOrders`
+- **Total Revenue** — `totalRevenue`
+- **Avg Order Value** — `avgOrderValue`
+- **Stripe Status** — `stripeOnboarded` + `payoutsEnabled` badge
+
+### Product Create/Edit Form Fields
+```
+name, description, price, stock, category, subcategory,
+sku, weight, dimensions, tags, variants (size/color/price/stock)
+images: FileList (max 6) → multipart/form-data
+```
+
+### Payout Request Form
+```
+amount: number (max = wallet.balance)
+method: "stripe" | "bank" | "paypal"
+payoutDetails:
+  - stripe: (auto, uses connected account)
+  - bank: bankName, accountNumber, iban
+  - paypal: paypalEmail
+```
+
+### Order List Columns
+```
+orderId, date, customer name, items (vendor's only), vendorTotal, status
+```
+
+### Real-time Notifications
+- Connect Socket.io on dashboard init: `socket.emit("join", { userId })`
+- Listen for notification events → show toast/bell icon count
+- Uses `src/utils/notifications.ts` → `sendRealtimeNotification(userId, payload)`
+
+### Key Implementation Notes
+- Access token stored in memory (not localStorage) — refresh token in httpOnly cookie
+- On `401` response: call `POST /api/auth/refresh` → retry original request once
+- Product image upload uses `FormData`, not JSON body
+- Wallet amounts are in cents (Stripe standard) — divide by 100 for display
+- Store slug is auto-generated by backend — display as read-only in edit form
+- Payout `lockedBalance` means funds are in-flight — show with a lock icon
+- `stripeOnboarded = false` → disable "Request Payout" button + show onboarding banner

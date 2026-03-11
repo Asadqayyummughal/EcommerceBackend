@@ -2,13 +2,14 @@ import mongoose, { ClientSession } from "mongoose";
 import Order from "../models/order.model";
 import { Return } from "../models/return.model";
 import Product from "../models/product.model";
+import { AppError } from "../utils/AppError";
 
 export const createReturnRequest = async (
   userId: string,
   payload: {
     orderId: string;
     items: any[];
-  }
+  },
 ) => {
   const order = await Order.findOne({
     _id: payload.orderId,
@@ -16,12 +17,12 @@ export const createReturnRequest = async (
     status: "delivered",
   });
 
-  if (!order) throw new Error("Order not eligible for return");
+  if (!order) throw new AppError("Order not eligible for return", 400);
   // ⏱ Return window (example: 7 days)
   const deliveredAt = order.updatedAt;
   const daysPassed =
     (Date.now() - deliveredAt.getTime()) / (1000 * 60 * 60 * 24);
-  if (daysPassed > 7) throw new Error("Return window expired");
+  if (daysPassed > 7) throw new AppError("Return window has expired (7 days)", 400);
   return Return.create({
     order: order._id,
     user: userId,
@@ -31,8 +32,8 @@ export const createReturnRequest = async (
 
 export const approveReturn = async (returnId: string) => {
   const rma = await Return.findById(returnId);
-  if (!rma) throw new Error("Return not found");
-  if (rma.status !== "requested") throw new Error("Invalid return state");
+  if (!rma) throw new AppError("Return not found", 404);
+  if (rma.status !== "requested") throw new AppError("Return is not in requested state", 400);
   rma.status = "approved";
   await rma.save();
 
@@ -41,7 +42,7 @@ export const approveReturn = async (returnId: string) => {
 
 export const rejectReturn = async (returnId: string, adminNote: string) => {
   const rma = await Return.findById(returnId);
-  if (!rma) throw new Error("Return not found");
+  if (!rma) throw new AppError("Return not found", 404);
   rma.status = "rejected";
   rma.adminNote = adminNote;
   await rma.save();
@@ -61,8 +62,8 @@ export const markReturnReceived = async (returnId: string) => {
 
   try {
     const rma = await Return.findById(returnId).session(session);
-    if (!rma) throw new Error("Return not found");
-    if (rma.status !== "approved") throw new Error("Return not approved");
+    if (!rma) throw new AppError("Return not found", 404);
+    if (rma.status !== "approved") throw new AppError("Return is not approved yet", 400);
     rma.status = "received";
     await restoreInventoryFromReturn(rma, session);
     await rma.save({ session });
@@ -79,23 +80,16 @@ export const markReturnReceived = async (returnId: string) => {
 
 export const refundReturn = async (
   returnId: string,
-  refundMethod: "original" | "wallet"
+  refundMethod: "original" | "wallet",
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  console.log(
-    "refund get called==============================================>",
-    returnId,
-    refundMethod
-  );
-
-  debugger;
   try {
     const rma = await Return.findById(returnId)
       .populate("order")
       .session(session);
-    if (!rma) throw new Error("Return not found");
-    if (rma.status !== "received") throw new Error("Items not received");
+    if (!rma) throw new AppError("Return not found", 404);
+    if (rma.status !== "received") throw new AppError("Items have not been received yet", 400);
     const refundAmount = calculateReturnRefund(rma);
     // Stripe / Wallet logic here
     rma.refundAmount = refundAmount;
@@ -116,7 +110,7 @@ export const refundReturn = async (
 
 export const restoreInventoryFromReturn = async (
   rma: any,
-  session: ClientSession
+  session: ClientSession,
 ) => {
   const order = await Order.findById(rma.order).session(session);
   for (const item of rma.items) {
@@ -154,7 +148,7 @@ export const calculateReturnRefund = (rma: any) => {
     const orderItem = order.items.find(
       (i: any) =>
         i.product.toString() === returnItem.product.toString() &&
-        i.variantSku === returnItem.variantSku
+        i.variantSku === returnItem.variantSku,
     );
     if (!orderItem) continue;
     refundableSubtotal += orderItem.price * returnItem.quantity;
@@ -174,12 +168,12 @@ export const calculateReturnRefund = (rma: any) => {
   // 4️⃣ Shipping refund (ONLY if full return)
   const returnedQty = rma.items.reduce(
     (sum: number, i: any) => sum + i.quantity,
-    0
+    0,
   );
 
   const orderedQty = order.items.reduce(
     (sum: number, i: any) => sum + i.quantity,
-    0
+    0,
   );
 
   const refundShipping = returnedQty === orderedQty ? order.shipping : 0;

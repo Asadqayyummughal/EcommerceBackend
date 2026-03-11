@@ -23,17 +23,31 @@ export const addToCart = asyncHandler(async (req: Request, res: Response) => {
   res.json({ success: true, data: cart });
 });
 
-export const updateCartItem = asyncHandler(async (req: Request, res: Response) => {
-  const { productId, quantity, variantSku } = req.body;
-  const cart = await cartService.updateCartItemService(req.user.id, productId, quantity, variantSku);
-  res.json({ success: true, data: cart });
-});
+export const updateCartItem = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { productId, quantity, variantSku } = req.body;
+    const cart = await cartService.updateCartItemService(
+      req.user.id,
+      productId,
+      quantity,
+      variantSku,
+    );
+    res.json({ success: true, data: cart });
+  },
+);
 
-export const removeCartItem = asyncHandler(async (req: Request, res: Response) => {
-  const { productId, variantSku } = req.body;
-  const cart = await cartService.removeCartItemService(req.user.id, productId, variantSku);
-  res.json({ success: true, data: cart });
-});
+export const removeCartItem = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { productId, variantSku } = req.body;
+    debugger;
+    const cart = await cartService.removeCartItemService(
+      req.user.id,
+      productId,
+      variantSku,
+    );
+    res.json({ success: true, data: cart });
+  },
+);
 
 export const syncCart = asyncHandler(async (req: Request, res: Response) => {
   const cart = await cartService.syncCartService(req.user.id, req.body.items);

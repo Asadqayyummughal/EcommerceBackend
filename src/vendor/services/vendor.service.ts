@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { IPayout, Payout } from "../../models/payout.model";
 import Stripe from "stripe";
 import { debug } from "console";
+import { AppError } from "../../utils/AppError";
 const ZERO_DECIMAL_CURRENCIES = [
   "bif",
   "clp",
@@ -46,7 +47,7 @@ export const applyForVendor = async (userId: string) => {
   let user = await User.findById(userId); //69809c2a09c9a53278e149f5
   const existing = await Vendor.findOne({ user: userId });
   if (existing) {
-    throw new Error("Vendor already exists");
+    throw new AppError("Vendor application already submitted", 409);
   }
   if (user) {
     const vendor = await Vendor.create({
@@ -66,9 +67,9 @@ export const getVendorsByStatus = async (status: string) => {
 
 export const approveVendor = async (vendorId: string, userId: string) => {
   const vendor = await Vendor.findById(vendorId);
-  if (!vendor) throw new Error("Vendor Does not exist");
+  if (!vendor) throw new AppError("Vendor not found", 404);
   const vendorRole = await Role.findOne({ name: "vendor" });
-  if (!vendorRole) throw new Error("Vendor role not configured");
+  if (!vendorRole) throw new AppError("Vendor role not configured", 500);
   vendor.status = "active";
   vendor.approvedAt = new Date();
   vendor.approvedBy = userId;
@@ -100,22 +101,21 @@ export const requestPayout = async (body: IPayout, vendorId: string) => {
   try {
     const vendor = await Vendor.findById({ _id: vendorId });
     if (!vendor || !vendor.payoutsEnabled) {
-      throw new Error("Stripe onboarding incomplete");
+      throw new AppError("Stripe onboarding not complete", 403);
     }
     const wallet = await VendorWallet.findOne({ vendor: vendorId }).session(
       session,
     );
 
-    if (!wallet || wallet.balance < amount) {
-      throw new Error("Wallet does not exist or Insufficient wallet balance");
-    }
-    if (!vendor.stripeAccountId) throw new Error("Stripe not connected");
+    if (!wallet) throw new AppError("Wallet not found", 404);
+    if (wallet.balance < amount) throw new AppError("Insufficient wallet balance", 400);
+    if (!vendor.stripeAccountId) throw new AppError("Stripe account not connected", 403);
     const stripeAccount = await stripe.accounts.retrieve(
       vendor.stripeAccountId,
     );
 
     if (!stripeAccount.payouts_enabled)
-      throw new Error("Stripe payouts not enabled");
+      throw new AppError("Stripe payouts not enabled for this account", 403);
     // 🔒 Lock funds
     wallet.balance -= Number(amount);
     wallet.lockedBalance += Number(amount);
@@ -169,11 +169,11 @@ export const rejectPayout = async (payoutId: string, reason: string) => {
   session.startTransaction();
   try {
     const payout = await Payout.findById(payoutId).session(session);
-    if (!payout) throw new Error("Payout not found");
+    if (!payout) throw new AppError("Payout not found", 404);
     const wallet = await VendorWallet.findOne({
       vendor: payout.vendor,
     }).session(session);
-    if (!wallet) throw new Error("Wallet not found");
+    if (!wallet) throw new AppError("Vendor wallet not found", 404);
     wallet.balance += payout.amount;
     wallet.lockedBalance -= payout.amount;
     payout.status = "rejected";
@@ -191,7 +191,7 @@ export const rejectPayout = async (payoutId: string, reason: string) => {
 
 export const enableVendorStripeAccount = async (userId: string) => {
   const vendor = await Vendor.findOne({ user: userId });
-  if (!vendor) throw new Error("Vendor does not exist");
+  if (!vendor) throw new AppError("Vendor not found", 404);
   let stripeAccount;
 
   // 🟢 CASE 1: Account already exists
@@ -251,20 +251,20 @@ export const enableVendorStripeAccount = async (userId: string) => {
 
 export const payoutVendor = async (userId: string, payoutId: string) => {
   const payout = await Payout.findById(payoutId);
-  if (!payout) throw new Error("Payout does not exist");
+  if (!payout) throw new AppError("Payout not found", 404);
 
   const vendor = await Vendor.findOne({ user: userId });
-  if (!vendor) throw new Error("Vendor not found");
+  if (!vendor) throw new AppError("Vendor not found", 404);
 
   const wallet = await VendorWallet.findOne({ vendor: vendor._id });
-  if (!wallet || wallet.balance < payout.amount)
-    throw new Error("Insufficient balance");
+  if (!wallet) throw new AppError("Vendor wallet not found", 404);
+  if (wallet.balance < payout.amount) throw new AppError("Insufficient wallet balance", 400);
 
-  if (!vendor.stripeAccountId) throw new Error("Stripe not connected");
+  if (!vendor.stripeAccountId) throw new AppError("Stripe account not connected", 403);
 
   const stripeAccount = await stripe.accounts.retrieve(vendor.stripeAccountId);
   if (!stripeAccount.payouts_enabled)
-    throw new Error("Stripe payouts not enabled");
+    throw new AppError("Stripe payouts not enabled for this account", 403);
 
   // Use the connected account's default currency (safest, avoids FX)
   const currency = stripeAccount.default_currency;
@@ -303,7 +303,7 @@ export const payoutVendor = async (userId: string, payoutId: string) => {
         error.code === "parameter_invalid" ||
         error.message.includes("currency")
       ) {
-        throw new Error(`Currency issue: ${error.message}`);
+        throw new AppError(`Currency issue: ${error.message}`, 400);
       }
       // Other cases: insufficient_funds, etc.
     }
@@ -316,6 +316,6 @@ export const payoutVendor = async (userId: string, payoutId: string) => {
 
 export const getVendorWalletDetail = async (vendorId: string) => {
   let vendorWallet = await VendorWallet.findOne({ vendor: vendorId });
-  if (!vendorWallet) throw new Error("wallet not exist");
+  if (!vendorWallet) throw new AppError("Vendor wallet not found", 404);
   return vendorWallet;
 };

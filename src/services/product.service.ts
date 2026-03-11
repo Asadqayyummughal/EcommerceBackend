@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Product, { IProduct } from "../models/product.model";
 import { Store } from "../models/store.model";
 import { Vendor } from "../models/vendor.model";
+import { AppError } from "../utils/AppError";
 
 export interface ProductQueryOptions {
   page?: number;
@@ -19,12 +20,12 @@ export const createProductService = async (payload: Partial<IProduct>) => {
     user: payload.createdBy,
     status: "active",
   });
-  if (!vendor) throw new Error("vendor not exist");
+  if (!vendor) throw new AppError("Vendor not found", 404);
   const store = await Store.findOne({
     vendor: vendor?._id,
     status: "approved",
   });
-  if (!store) throw new Error("Store not approved");
+  if (!store) throw new AppError("Store not approved", 403);
   const product = await Product.create({
     ...payload,
     vendor: vendor._id,
@@ -35,9 +36,9 @@ export const createProductService = async (payload: Partial<IProduct>) => {
 
 export const getProductByIdService = async (id: string) => {
   if (!mongoose.Types.ObjectId.isValid(id))
-    throw new Error("Invalid product id");
+    throw new AppError("Invalid product id", 400);
   const product = await Product.findById(id).lean();
-  if (!product) throw new Error("Product not found");
+  if (!product) throw new AppError("Product not found", 404);
   return product;
 };
 
@@ -96,19 +97,19 @@ export const updateProductService = async (
   payload: Partial<IProduct>,
 ) => {
   const product = await Product.findByIdAndUpdate(id, payload, { new: true });
-  if (!product) throw new Error("Product not found");
+  if (!product) throw new AppError("Product not found", 404);
   return product.toObject();
 };
 
 export const deleteProductService = async (id: string) => {
   const p = await Product.findByIdAndDelete(id);
-  if (!p) throw new Error("Product not found");
+  if (!p) throw new AppError("Product not found", 404);
   return true;
 };
 
 export const getVendorStoreProducts = async (vendorId: string) => {
   let store = await Store.findOne({ vendor: vendorId });
-  if (!store) throw new Error("Store does not exist");
+  if (!store) throw new AppError("Store does not exist", 404);
   return await Product.find({
     store: store._id,
     isActive: true,
