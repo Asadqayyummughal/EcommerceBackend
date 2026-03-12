@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IOrderItem {
   product: mongoose.Types.ObjectId;
+  category?: mongoose.Types.ObjectId; // snapshot for coupon eligibility
   variantSku?: string;
   title: string;
   price: number; // snapshot price
@@ -70,6 +71,7 @@ const OrderSchema = new Schema<IOrder>(
     items: [
       {
         product: { type: Schema.Types.ObjectId, ref: "Product" },
+        category: { type: Schema.Types.ObjectId, ref: "Category" },
         vendor: { type: Schema.Types.ObjectId, ref: "Vendor" },
         variantSku: String,
         title: String,

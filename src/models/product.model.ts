@@ -19,8 +19,8 @@ export interface IProduct extends Document {
   currency: string;
   sku?: string;
   brand?: string;
-  categories: mongoose.Types.ObjectId[]; // ref to Category (optional)
-  subCategories: mongoose.Types.ObjectId[];
+  category: mongoose.Types.ObjectId;           // required, single ref
+  subCategory?: mongoose.Types.ObjectId;        // optional, single ref — must belong to category
   createdBy: mongoose.Types.ObjectId;
   tags: string[];
   images: string[];
@@ -30,11 +30,10 @@ export interface IProduct extends Document {
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
-  averageRating: string;
+  averageRating: number;
   reviewCount: number;
   vendor: mongoose.Types.ObjectId;
   store: mongoose.Types.ObjectId;
-  // NEW
 }
 
 const VariantSchema = new Schema<IProductVariant>(
@@ -70,15 +69,15 @@ const ProductSchema = new Schema<IProduct>(
     currency: { type: String, default: "USD" },
     sku: { type: String, index: true },
     brand: { type: String },
-    categories: [{ type: Schema.Types.ObjectId, ref: "Category" }],
-    subCategories: [{ type: Schema.Types.ObjectId, ref: "SubCategory" }],
+    category: { type: Schema.Types.ObjectId, ref: "Category", required: true, index: true },
+    subCategory: { type: Schema.Types.ObjectId, ref: "SubCategory", index: true },
     tags: [{ type: String, index: true }],
     images: [{ type: String }],
     variants: [VariantSchema],
     stock: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     reviewCount: { type: Number, default: 0 },
-    averageRating: { type: String },
+    averageRating: { type: Number, default: 0 },
     vendor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Vendor",
@@ -97,12 +96,15 @@ const ProductSchema = new Schema<IProduct>(
   },
   { timestamps: true },
 );
+
 // Text index for basic search on title & description
 ProductSchema.index({ title: "text", description: "text", tags: "text" });
 // Compound indexes for common sorting/filtering
 ProductSchema.index({ price: 1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ store: 1 });
+ProductSchema.index({ category: 1, subCategory: 1 });
+
 const Product: Model<IProduct> = mongoose.model<IProduct>(
   "Product",
   ProductSchema,

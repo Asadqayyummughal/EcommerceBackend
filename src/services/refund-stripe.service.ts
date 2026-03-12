@@ -1,4 +1,6 @@
 import Stripe from "stripe";
+import { AppError } from "../utils/AppError";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export const refundStripePayment = async (
@@ -17,7 +19,7 @@ export const refundStripePayment = async (
   );
 
   if (refund.status !== "succeeded") {
-    throw new Error(`Refund not succeeded: status ${refund.status}`);
+    throw new AppError(`Refund not succeeded: status ${refund.status}`, 502);
   }
 
   return refund;

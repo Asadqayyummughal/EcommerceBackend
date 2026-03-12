@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import Order from "../models/order.model";
 import { refundStripePayment } from "./refund-stripe.service";
-import { restoreInventory } from "./inventory.service";
+import { restoreInventory } from "../utils/restore-inventory";
 import { AppError } from "../utils/AppError";
 
 export const cancelOrderService = async (orderId: string, userId: string) => {
@@ -21,7 +21,7 @@ export const cancelOrderService = async (orderId: string, userId: string) => {
 
     // 🔁 Refund if paid
     if (order.paymentStatus === "paid") {
-      await refundStripePayment(order.stripePaymentIntentId);
+      await refundStripePayment(order.stripePaymentIntentId, orderId);
       order.paymentStatus = "refunded";
     }
     // ♻ Restore inventory

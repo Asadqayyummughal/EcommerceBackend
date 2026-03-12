@@ -30,3 +30,12 @@ export const deleteSubCategory = asyncHandler(async (req: Request, res: Response
   await subCategoryService.deleteSubCategoryService(req.params.id);
   res.json({ success: true, message: "Subcategory deleted successfully" });
 });
+
+// GET /api/product/subcategories/:id/children  — direct children of a subcategory
+// GET /api/product/subcategories/root?category=<categoryId>  — level-1 subs of a category
+export const getSubCategoryChildren = asyncHandler(async (req: Request, res: Response) => {
+  const parentId = req.params.id === "root" ? null : req.params.id;
+  const categoryId = req.query.category as string | undefined;
+  const children = await subCategoryService.getSubCategoryChildrenService(parentId, categoryId);
+  res.json({ success: true, data: children });
+});

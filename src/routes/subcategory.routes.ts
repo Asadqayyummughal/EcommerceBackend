@@ -16,6 +16,7 @@ router.post(
   subCategoryController.createSubCategory
 );
 router.get("/", subCategoryController.listSubCategories);
+router.get("/:id/children", subCategoryController.getSubCategoryChildren);
 router.get("/:id", subCategoryController.getSubCategory);
 router.put(
   "/:id",

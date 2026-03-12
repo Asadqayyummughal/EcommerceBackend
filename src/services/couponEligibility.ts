@@ -1,8 +1,9 @@
-import { ICart, ICartItem } from "../models/cart.model";
+import { ICartItem } from "../models/cart.model";
+import { IOrderItem } from "../models/order.model";
 import { ICoupon } from "../models/coupon.model";
 
-export const getEligibleItems = (cartItems: ICartItem[], coupon: ICoupon) => {
-  // Global coupon
+export const getEligibleItems = (cartItems: IOrderItem[], coupon: ICoupon) => {
+  // Global coupon — applies to everything
   if (
     !coupon.applicableProducts?.length &&
     !coupon.applicableCategories?.length
@@ -18,12 +19,12 @@ export const getEligibleItems = (cartItems: ICartItem[], coupon: ICoupon) => {
     )
       return true;
 
-    // if (
-    //   coupon.applicableCategories?.some(
-    //     (c) => c.toString() === item.product.category?.toString()
-    //   )
-    // )
-    //   return true;
+    if (
+      coupon.applicableCategories?.some(
+        (c) => c.toString() === item.category?.toString()
+      )
+    )
+      return true;
 
     return false;
   });

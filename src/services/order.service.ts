@@ -72,6 +72,7 @@ export const checkoutOrder = async (
       subtotal += itemSubtotal;
       orderItems.push({
         product: product._id,
+        category: product.category,
         vendor: product.vendor,
         variantSku: item.variantSku,
         title: product.title,

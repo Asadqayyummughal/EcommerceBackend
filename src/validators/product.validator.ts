@@ -10,7 +10,8 @@ export const createProductSchema = Joi.object({
   currency: Joi.string().length(3).default("USD"),
   sku: Joi.string().allow("", null),
   brand: Joi.string().allow("", null),
-  categories: Joi.array().items(Joi.string().hex().length(24)).default([]),
+  category: Joi.string().hex().length(24).required(),
+  subCategory: Joi.string().hex().length(24).allow(null),
   tags: Joi.array().items(Joi.string()).default([]),
   images: Joi.array().items(Joi.string().uri()).default([]),
   variants: Joi.array()
@@ -38,7 +39,8 @@ export const updateProductSchema = Joi.object({
   currency: Joi.string().length(3),
   sku: Joi.string().allow("", null),
   brand: Joi.string().allow("", null),
-  categories: Joi.array().items(Joi.string().hex().length(24)),
+  category: Joi.string().hex().length(24),
+  subCategory: Joi.string().hex().length(24).allow(null),
   tags: Joi.array().items(Joi.string()),
   images: Joi.array().items(Joi.string().uri()),
   variants: Joi.array().items(
