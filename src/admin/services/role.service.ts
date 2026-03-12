@@ -3,6 +3,7 @@ import Permission from "../../models/permission.model";
 import Role, { UserRole } from "../../models/role.model";
 import User from "../../models/user.model";
 import { toObjectIds } from "../../utils/helpers.utils";
+import { AppError } from "../../utils/AppError";
 
 export const createRole = async (
   name: UserRole,
@@ -11,9 +12,9 @@ export const createRole = async (
 ) => {
   let permissionIds: null | Array<Types.ObjectId>;
   const exists = await Role.findOne({ name });
-  if (exists) throw new Error("Role already exists");
+  if (exists) throw new AppError("Role already exists", 409);
   if (name !== "admin" && !permissions)
-    throw new Error("Kindly provide the role permissions");
+    throw new AppError("Kindly provide the role permissions", 400);
   if (name == "admin") {
     permissionIds = null;
   } else {
@@ -23,7 +24,7 @@ export const createRole = async (
     const foundIds = permissionDocs.map((p) => p._id.toString());
     const invalidKeys = permissions.filter((id) => !foundIds.includes(id));
     if (invalidKeys.length) {
-      throw new Error(`Invalid permissions: ${invalidKeys.join(", ")}`);
+      throw new AppError(`Invalid permissions: ${invalidKeys.join(", ")}`, 400);
     }
     permissionIds = toObjectIds(permissions);
   }
@@ -42,7 +43,7 @@ export const listRoles = async () => {
 
 export const getRole = async (roleId: string) => {
   const role = await Role.findById(roleId).populate("permissions");
-  if (!role) throw new Error("Role not found");
+  if (!role) throw new AppError("Role not found", 404);
   return role;
 };
 
@@ -62,7 +63,7 @@ export const updateRole = async (
         _id: { $in: permissions },
       });
       if (permissionDocs.length !== permissions.length) {
-        throw new Error("Invalid permissions");
+        throw new AppError("Invalid permissions", 400);
       }
       updateData.permissions = permissionDocs.map((p) => p._id);
     }
@@ -71,15 +72,15 @@ export const updateRole = async (
     new: true,
   }).populate("permissions");
 
-  if (!role) throw new Error("Role not found");
+  if (!role) throw new AppError("Role not found", 404);
   return role;
 };
 
 export const deleteRole = async (roleId: string) => {
   const role = await Role.findById(roleId);
-  if (!role) throw new Error("Role not found");
+  if (!role) throw new AppError("Role not found", 404);
   if (role.name === "admin") {
-    throw new Error("Admin role cannot be deleted");
+    throw new AppError("Admin role cannot be deleted", 403);
   }
 
   let res = await role.deleteOne();
@@ -88,12 +89,12 @@ export const deleteRole = async (roleId: string) => {
 
 export const assignRoleToUser = async (roleId: string, userId: string) => {
   const role = await Role.findById(roleId);
-  if (!role) throw new Error("Role not found");
+  if (!role) throw new AppError("Role not found", 404);
   const user = await User.findByIdAndUpdate(
     userId,
     { role: role._id },
     { new: true },
   ).populate("role");
-  if (!user) throw new Error("User not found");
+  if (!user) throw new AppError("User not found", 404);
   return user;
 };

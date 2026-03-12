@@ -1,14 +1,16 @@
 import Stripe from "stripe";
 import Order from "../models/order.model";
+import { AppError } from "../utils/AppError";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
 });
+
 export const createStripePaymentIntent = async (orderId: string) => {
   const order = await Order.findById(orderId);
-  if (!order) throw new Error("Order not found");
+  if (!order) throw new AppError("Order not found", 404);
   if (order.paymentStatus === "paid") {
-    throw new Error("Order already paid");
+    throw new AppError("Order already paid", 400);
   }
   const paymentIntent = await stripe.paymentIntents.create({
     amount: Math.round(order.totalAmount * 100), // cents
@@ -32,20 +34,13 @@ export const confirmPayment = async (
   paymentIntentId: string,
   payment_method: any,
 ) => {
-  try {
-    // const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
-    //   payment_method: payment_method,
-    // });
-    const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
-      payment_method: "pm_card_visa", // This simulates 4242 4242 4242 4242 (successful charge)
-    });
+  const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
+    payment_method: "pm_card_visa", // This simulates 4242 4242 4242 4242 (successful charge)
+  });
 
-    if (paymentIntent.status === "succeeded") {
-      return { success: true, message: "Payment succeeded!" };
-    } else {
-      return { success: false, status: paymentIntent.status };
-    }
-  } catch (error: any) {
-    throw new Error(`${error.message}`);
+  if (paymentIntent.status === "succeeded") {
+    return { success: true, message: "Payment succeeded!" };
+  } else {
+    return { success: false, status: paymentIntent.status };
   }
 };

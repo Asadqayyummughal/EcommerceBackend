@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AuthUser } from "../types/express";
+import { AppError } from "../utils/AppError";
 
 interface JwtPayload {
   email: string | undefined;
@@ -10,25 +11,19 @@ interface JwtPayload {
 
 export const authMiddleware = (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) => {
   try {
     let token = req.headers.authorization;
-    // No token sent
     if (!token || !token.startsWith("Bearer")) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized — No token provided",
-      });
+      return next(new AppError("Unauthorized — No token provided", 401));
     }
-    // Extract token
     token = token.split(" ")[1];
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET as string,
     ) as AuthUser;
-    // attach user id to request object
 
     req.user = {
       id: decoded.id,
@@ -39,9 +34,6 @@ export const authMiddleware = (
     };
     next();
   } catch (err) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired token",
-    });
+    next(new AppError("Invalid or expired token", 401));
   }
 };

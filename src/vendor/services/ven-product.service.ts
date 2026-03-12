@@ -1,5 +1,6 @@
 import Product, { IProduct } from "../../models/product.model";
 import { Vendor } from "../../models/vendor.model";
+import { AppError } from "../../utils/AppError";
 
 export const createVendorProduct = async (
   userId: string,
@@ -9,7 +10,7 @@ export const createVendorProduct = async (
     user: userId,
     status: "active",
   });
-  if (!vendor) throw new Error("Vendor not approved");
+  if (!vendor) throw new AppError("Vendor not approved", 403);
   const product = await Product.create({
     ...body,
     vendor: vendor._id,
@@ -20,7 +21,7 @@ export const createVendorProduct = async (
 
 export const getVendorProducts = async (userId: string) => {
   const vendor = await Vendor.findOne({ user: userId });
-  if (!vendor) throw new Error("Vendor not found");
+  if (!vendor) throw new AppError("Vendor not found", 404);
   const products = await Product.find({ vendor: vendor._id });
   return products;
 };
@@ -32,7 +33,7 @@ export const getVendorProducts = async (userId: string) => {
 //     vendor: vendor._id,
 //   });
 //   if (!product) {
-//     throw new Error("Product not found or access denied");
+//     throw new AppError("Product not found or access denied", 404);
 //   }
 
 //   Object.assign(product, req.body);

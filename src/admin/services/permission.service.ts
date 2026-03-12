@@ -1,4 +1,5 @@
 import Permission from "../../models/permission.model";
+import { AppError } from "../../utils/AppError";
 
 export const createPermission = async (
   key: string,
@@ -6,7 +7,7 @@ export const createPermission = async (
   module: string
 ) => {
   const exists = await Permission.findOne({ key });
-  if (exists) throw new Error("Permission already exists");
+  if (exists) throw new AppError("Permission already exists", 409);
   const permission = await Permission.create({ key, description, module });
   return permission;
 };
@@ -20,7 +21,7 @@ export const updatePermission = async (_id: string, update: {}) => {
   const permission = await Permission.findByIdAndUpdate(_id, update, {
     new: true,
   });
-  if (!permission) throw new Error("Permission not found");
+  if (!permission) throw new AppError("Permission not found", 404);
   return permission;
 };
 

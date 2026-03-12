@@ -2,6 +2,7 @@ import Order from "../models/order.model";
 import Product from "../models/product.model";
 import mongoose from "mongoose";
 import { Review } from "../models/review.model";
+import { AppError } from "../utils/AppError";
 
 export const createReview = async (
   userId: string,
@@ -19,14 +20,14 @@ export const createReview = async (
       status: "delivered",
     }).session(session);
     if (!order) {
-      throw new Error("Order not eligible for review");
+      throw new AppError("Order not eligible for review", 400);
     }
     const orderedItem = order.items.find(
       (item: any) => item.product.toString() === productId
     );
 
     if (!orderedItem) {
-      throw new Error("Product not found in order");
+      throw new AppError("Product not found in order", 404);
     }
 
     const review = await Review.create(
@@ -54,35 +55,33 @@ export const createReview = async (
     throw error;
   }
 };
+
 export const getProductReviews = async (
   productId: string,
   page: number,
   limit: number
 ) => {
-  try {
-    const reviews = await Review.find({
-      product: productId,
-      isApproved: true,
-    })
-      .populate("user", "name avatar")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
-    const total = await Review.countDocuments({
-      product: productId,
-      isApproved: true,
-    });
-    const pagination = {
-      docsCount: total,
-      pageNo: page,
-      totalPages: Math.ceil(total / limit),
-    };
+  const reviews = await Review.find({
+    product: productId,
+    isApproved: true,
+  })
+    .populate("user", "name avatar")
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit);
+  const total = await Review.countDocuments({
+    product: productId,
+    isApproved: true,
+  });
+  const pagination = {
+    docsCount: total,
+    pageNo: page,
+    totalPages: Math.ceil(total / limit),
+  };
 
-    return { reviews, pagination };
-  } catch (error) {
-    throw error;
-  }
+  return { reviews, pagination };
 };
+
 export const updateReview = async (
   userId: string,
   reviewId: string,
@@ -94,7 +93,7 @@ export const updateReview = async (
     user: userId,
   });
 
-  if (!review) throw new Error("Review not found");
+  if (!review) throw new AppError("Review not found", 404);
 
   review.rating = rating;
   review.comment = comment;
@@ -104,6 +103,7 @@ export const updateReview = async (
 
   return review;
 };
+
 export const recalcProductRating = async (
   productId: string,
   session?: mongoose.ClientSession
@@ -139,14 +139,15 @@ export const deleteReview = async (
   isAdmin = false
 ) => {
   const review = await Review.findById(reviewId);
-  if (!review) throw new Error("Review not found");
+  if (!review) throw new AppError("Review not found", 404);
   if (!isAdmin && review.user.toString() !== userId) {
-    throw new Error("Unauthorized");
+    throw new AppError("Unauthorized", 403);
   }
   let res = await review.deleteOne();
   await recalcProductRating(review.product.toString());
   return res;
 };
+
 export const getAllReviews = async () => {
   const reviews = await Review.find().sort({ createdAt: -1 });
   return reviews;

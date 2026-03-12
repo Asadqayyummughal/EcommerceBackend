@@ -1,5 +1,6 @@
 import Order from "../../models/order.model";
 import Shipment from "../../models/shimpment.model";
+import { AppError } from "../../utils/AppError";
 
 export const createShipment = async (payload: {
   carrier: string;
@@ -8,9 +9,9 @@ export const createShipment = async (payload: {
 }) => {
   const orderId = payload.orderId;
   const order = await Order.findById(orderId);
-  if (!order) throw new Error("Order not found");
+  if (!order) throw new AppError("Order not found", 404);
   if (order.status !== "processing")
-    throw new Error("Order must be in processing state");
+    throw new AppError("Order must be in processing state", 400);
   const carrier = payload.carrier;
   const trackingNumber = payload.trackingNumber;
   orderId;
@@ -27,7 +28,7 @@ export const createShipment = async (payload: {
 
 export const markShipmentDelivered = async (shipmentId: string) => {
   const shipment = await Shipment.findById(shipmentId);
-  if (!shipment) throw new Error("Shipment not foulnd");
+  if (!shipment) throw new AppError("Shipment not found", 404);
 
   shipment.status = "delivered";
   shipment.deliveredAt = new Date();
@@ -43,7 +44,7 @@ export const markShipmentDelivered = async (shipmentId: string) => {
 
 export const markShipmentShipped = async (shipmentId: string) => {
   const shipment = await Shipment.findById(shipmentId);
-  if (!shipment) throw new Error("Shipment not found");
+  if (!shipment) throw new AppError("Shipment not found", 404);
 
   shipment.status = "shipped";
   shipment.shippedAt = new Date();

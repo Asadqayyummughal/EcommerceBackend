@@ -20,6 +20,7 @@ export interface IProduct extends Document {
   sku?: string;
   brand?: string;
   categories: mongoose.Types.ObjectId[]; // ref to Category (optional)
+  subCategories: mongoose.Types.ObjectId[];
   createdBy: mongoose.Types.ObjectId;
   tags: string[];
   images: string[];
@@ -70,6 +71,7 @@ const ProductSchema = new Schema<IProduct>(
     sku: { type: String, index: true },
     brand: { type: String },
     categories: [{ type: Schema.Types.ObjectId, ref: "Category" }],
+    subCategories: [{ type: Schema.Types.ObjectId, ref: "SubCategory" }],
     tags: [{ type: String, index: true }],
     images: [{ type: String }],
     variants: [VariantSchema],

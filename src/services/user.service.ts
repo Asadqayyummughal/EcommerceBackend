@@ -2,6 +2,7 @@ import User, { IUser } from "../models/user.model";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
+import { AppError } from "../utils/AppError";
 
 export const getProfile = async (userId: string) => {
   const user = await User.findById(userId)
@@ -15,7 +16,7 @@ export const getProfile = async (userId: string) => {
         // model: "Permission"         // usually not needed if ref is correct
       },
     });
-  if (!user) throw new Error("User not found");
+  if (!user) throw new AppError("User not found", 404);
   return user;
 };
 
@@ -39,17 +40,17 @@ export const changePassword = async (
   newPassword: string,
 ) => {
   const user = await User.findById(userId);
-  if (!user) throw new Error("User not found");
+  if (!user) throw new AppError("User not found", 404);
 
   const isMatch = await bcrypt.compare(oldPassword, user.password);
-  if (!isMatch) throw new Error("Old password is incorrect");
+  if (!isMatch) throw new AppError("Old password is incorrect", 400);
 
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
 };
 export const uploadProfileImage = async (userId: string, filePath: string) => {
   const user = await User.findById(userId);
-  if (!user) throw new Error("User not found");
+  if (!user) throw new AppError("User not found", 404);
 
   // DELETE OLD IMAGE SAFELY
   if (user.image) {

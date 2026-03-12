@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Order from "../models/order.model";
 import { refundStripePayment } from "./refund-stripe.service";
 import { restoreInventory } from "./inventory.service";
+import { AppError } from "../utils/AppError";
 
 export const cancelOrderService = async (orderId: string, userId: string) => {
   const session = await mongoose.startSession();
@@ -10,13 +11,13 @@ export const cancelOrderService = async (orderId: string, userId: string) => {
     const order = await Order.findOne({ _id: orderId, user: userId }).session(
       session
     );
-    if (!order) throw new Error("Order not found");
+    if (!order) throw new AppError("Order not found", 404);
 
     if (order.status === "cancelled")
-      throw new Error("Order already cancelled");
+      throw new AppError("Order already cancelled", 400);
 
     if (order.status === "shipped")
-      throw new Error("Shipped orders cannot be cancelled");
+      throw new AppError("Shipped orders cannot be cancelled", 400);
 
     // 🔁 Refund if paid
     if (order.paymentStatus === "paid") {

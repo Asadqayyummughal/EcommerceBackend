@@ -25,7 +25,7 @@ router.patch(
 );
 
 router.put(
-  "updateStore",
+  "/:id",
   authMiddleware,
   requireActiveVendor,
   uploadStore.fields([

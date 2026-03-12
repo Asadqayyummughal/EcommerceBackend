@@ -1,15 +1,16 @@
 import { Vendor } from "../models/vendor.model";
 import { NextFunction, Request, Response } from "express";
+import { AppError } from "../utils/AppError";
 
 export const requireActiveVendor = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) => {
   try {
     const vendor = await Vendor.findOne({ user: req.user.id });
     if (!vendor || vendor.status !== "active") {
-      return res.status(403).json({ success: false, message: "Vendor account not approved" });
+      return next(new AppError("Vendor account not approved", 403));
     }
     next();
   } catch (err) {
