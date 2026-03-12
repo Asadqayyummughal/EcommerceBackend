@@ -4,12 +4,12 @@ import fs from "fs";
 
 type UploadContext = "products" | "store" | "users" | "categories";
 
-const ALLOWED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"];
+const ALLOWED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".jfif"];
 
 const SIZE_LIMITS: Record<UploadContext, number> = {
-  products: 5 * 1024 * 1024,   // 5 MB
-  store: 5 * 1024 * 1024,      // 5 MB
-  users: 2 * 1024 * 1024,      // 2 MB
+  products: 5 * 1024 * 1024, // 5 MB
+  store: 5 * 1024 * 1024, // 5 MB
+  users: 2 * 1024 * 1024, // 2 MB
   categories: 2 * 1024 * 1024, // 2 MB
 };
 
@@ -32,7 +32,11 @@ function createUpload(context: UploadContext) {
     fileFilter: (_req, file, cb) => {
       const ext = path.extname(file.originalname).toLowerCase();
       if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        return cb(new Error(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}`));
+        return cb(
+          new Error(
+            `Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}`,
+          ),
+        );
       }
       cb(null, true);
     },
