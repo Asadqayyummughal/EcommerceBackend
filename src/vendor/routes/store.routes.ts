@@ -25,9 +25,13 @@ router.patch(
 );
 
 router.put(
-  "/:id",
+  "updateStore",
   authMiddleware,
   requireActiveVendor,
+  uploadStore.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "banner", maxCount: 1 },
+  ]),
   storeController.updateStore,
 );
 

@@ -18,7 +18,6 @@ export const createStore = async (
   if (!vendor) {
     throw new AppError("Vendor account not found or not approved", 403);
   }
-
   // 2️⃣ One store per vendor
   const existingStore = await Store.findOne({ vendor: vendor._id });
   if (existingStore) {
@@ -28,9 +27,7 @@ export const createStore = async (
   // 3️⃣ Generate unique slug from name
   const baseSlug = slugify(body.name, { lower: true, strict: true });
   const slugExists = await Store.findOne({ slug: baseSlug });
-  const slug = slugExists
-    ? `${baseSlug}-${Date.now()}`
-    : baseSlug;
+  const slug = slugExists ? `${baseSlug}-${Date.now()}` : baseSlug;
 
   // 4️⃣ Create store with only allowed fields
   return await Store.create({
@@ -73,7 +70,9 @@ export const getStoreByUserId = async (userId: string) => {
 export const updateStore = async (
   userId: string,
   storeId: string,
-  updateData: Partial<IStore>, // better than passing whole IStore
+  body: Pick<Partial<IStore>, "name" | "description" | "policies">,
+  logo?: string,
+  banner?: string,
 ) => {
   const vendor = await Vendor.findOne({ user: userId });
   if (!vendor) {
@@ -83,11 +82,19 @@ export const updateStore = async (
   if (!store) {
     throw new AppError("Store not found or does not belong to you", 404);
   }
-  // 3. Add updatedBy
-  updateData.updatedBy = vendor.user;
+
+  const allowedUpdate: Partial<IStore> = {
+    ...(body.name && { name: body.name }),
+    ...(body.description && { description: body.description }),
+    ...(body.policies && { policies: body.policies }),
+    ...(logo && { logo }),
+    ...(banner && { banner }),
+    updatedBy: vendor.user,
+  };
+
   const updated = await Store.findByIdAndUpdate(
     storeId,
-    { $set: updateData },
+    { $set: allowedUpdate },
     { new: true, runValidators: true },
   );
 
