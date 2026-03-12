@@ -6,7 +6,7 @@ import {
   uploadImageController,
 } from "../controllers/user.controllers";
 import { authMiddleware } from "../middlewares/auth.middleware";
-import { uploadProfile } from "../middlewares/upload.middleware";
+import { uploadUser } from "../middlewares/multer";
 const router = Router();
 router.get("/profile", authMiddleware, getProfileController);
 router.post("/updateProfile", authMiddleware, updateProfileController);
@@ -18,7 +18,7 @@ router.post(
 router.post(
   "/upload-image/:id",
   authMiddleware,
-  uploadProfile.single("image"),
+  uploadUser.single("image"),
   uploadImageController,
 );
 

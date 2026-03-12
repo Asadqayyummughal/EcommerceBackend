@@ -7,38 +7,40 @@ import Product from "../../models/product.model";
 import { toObjectId } from "../../utils/helpers.utils";
 import { AppError } from "../../utils/AppError";
 
-export const createStore = async (userId: string, body: IStore) => {
-  const { name, description } = body;
+export const createStore = async (
+  userId: string,
+  body: Pick<IStore, "name" | "description" | "policies">,
+  logo?: string,
+  banner?: string,
+) => {
   // 1️⃣ Vendor must exist & be approved
-  const vendor = await Vendor.findOne({
-    user: userId,
-    status: "active",
-  });
+  const vendor = await Vendor.findOne({ user: userId, status: "active" });
   if (!vendor) {
     throw new AppError("Vendor account not found or not approved", 403);
   }
+
   // 2️⃣ One store per vendor
   const existingStore = await Store.findOne({ vendor: vendor._id });
   if (existingStore) {
     throw new AppError("Store already exists for this vendor", 409);
   }
-  // 3️⃣ Generate slug
-  let baseSlug = slugify(name, {
-    lower: true,
-    strict: true,
-  });
-  let slug = baseSlug;
-  let count = 1;
-  // Ensure slug uniqueness
-  while (await Store.exists({ slug })) {
-    slug = `${baseSlug}-${count++}`;
-  }
-  // 4️⃣ Create store
+
+  // 3️⃣ Generate unique slug from name
+  const baseSlug = slugify(body.name, { lower: true, strict: true });
+  const slugExists = await Store.findOne({ slug: baseSlug });
+  const slug = slugExists
+    ? `${baseSlug}-${Date.now()}`
+    : baseSlug;
+
+  // 4️⃣ Create store with only allowed fields
   return await Store.create({
     vendor: vendor._id,
-    name,
+    name: body.name,
     slug,
-    description,
+    description: body.description,
+    policies: body.policies,
+    ...(logo && { logo }),
+    ...(banner && { banner }),
   });
 };
 

@@ -2,7 +2,7 @@ import { Router } from "express";
 import * as productControllers from "../controllers/product.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { roleMiddleware } from "../middlewares/role.middleware";
-import { uploadMiddleware } from "../middlewares/multer";
+import { uploadProduct } from "../middlewares/multer";
 import {
   createProductSchema,
   updateProductSchema,
@@ -15,7 +15,7 @@ router.post(
   "/",
   authMiddleware,
   requireActiveVendor,
-  uploadMiddleware.array("images", 6),
+  uploadProduct.array("images", 6),
   validate(createProductSchema),
   productControllers.createProduct,
 );
@@ -25,7 +25,7 @@ router.patch(
   "/:id",
   authMiddleware,
   //   roleMiddleware,
-  uploadMiddleware.array("images", 6),
+  uploadProduct.array("images", 6),
   validate(updateProductSchema),
   productControllers.updateProduct,
 );

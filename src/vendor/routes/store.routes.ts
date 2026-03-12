@@ -3,7 +3,7 @@ import { authMiddleware } from "../../middlewares/auth.middleware";
 import * as storeController from "../controller/store.controller";
 import { requireActiveVendor } from "../../middlewares/vendor.middleware";
 import { isAdmin } from "../../middlewares/admin.middleware";
-import { uploadMiddleware } from "../../middlewares/multer";
+import { uploadStore } from "../../middlewares/multer";
 const router = Router();
 // POST /api/vendor/store
 router.post(
@@ -11,7 +11,10 @@ router.post(
   authMiddleware,
   requireActiveVendor,
   //required permission necessary
-  uploadMiddleware.array("images", 6),
+  uploadStore.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "banner", maxCount: 1 },
+  ]),
   storeController.createStore,
 );
 router.patch(

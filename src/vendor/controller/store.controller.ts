@@ -3,7 +3,10 @@ import * as storeService from "../services/store.service";
 import { asyncHandler } from "../../utils/asyncHandler";
 
 export const createStore = asyncHandler(async (req: Request, res: Response) => {
-  const store = await storeService.createStore(req.user.id, req.body);
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  const logo = files?.logo?.[0]?.filename;
+  const banner = files?.banner?.[0]?.filename;
+  const store = await storeService.createStore(req.user.id, req.body, logo, banner);
   res.status(201).json({ success: true, message: "Store created", data: store });
 });
 

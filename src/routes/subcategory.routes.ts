@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware";
-import { uploadMiddleware } from "../middlewares/multer";
+import { uploadCategory } from "../middlewares/multer";
 import {
   createCategorySchema,
   createSubCategorySchema,
@@ -11,7 +11,7 @@ const router = Router();
 router.post(
   "/",
   authMiddleware,
-  uploadMiddleware.single("image"),
+  uploadCategory.single("image"),
   validate(createSubCategorySchema),
   subCategoryController.createSubCategory
 );
@@ -20,7 +20,7 @@ router.get("/:id", subCategoryController.getSubCategory);
 router.put(
   "/:id",
   authMiddleware,
-  uploadMiddleware.single("image"),
+  uploadCategory.single("image"),
   validate(createCategorySchema),
   subCategoryController.updateSubCategory
 );
