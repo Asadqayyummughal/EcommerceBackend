@@ -11,12 +11,9 @@ export interface Review {
   user: Types.ObjectId;
   product: Types.ObjectId;
   order: Types.ObjectId;
-
   rating: number;
   comment?: string;
-
   isApproved: boolean;
-
   // Automatic from { timestamps: true }
   createdAt: Date;
   updatedAt: Date;
@@ -42,7 +39,7 @@ const ReviewSchema = new Schema<Review>(
     comment: { type: String },
     isApproved: { type: Boolean, default: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 // Prevent duplicate reviews (user + product)
 ReviewSchema.index({ user: 1, product: 1 }, { unique: true });
