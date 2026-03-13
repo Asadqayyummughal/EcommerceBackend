@@ -108,8 +108,10 @@ export const requestPayout = async (body: IPayout, vendorId: string) => {
     );
 
     if (!wallet) throw new AppError("Wallet not found", 404);
-    if (wallet.balance < amount) throw new AppError("Insufficient wallet balance", 400);
-    if (!vendor.stripeAccountId) throw new AppError("Stripe account not connected", 403);
+    if (wallet.balance < amount)
+      throw new AppError("Insufficient wallet balance", 400);
+    if (!vendor.stripeAccountId)
+      throw new AppError("Stripe account not connected", 403);
     const stripeAccount = await stripe.accounts.retrieve(
       vendor.stripeAccountId,
     );
@@ -192,60 +194,76 @@ export const rejectPayout = async (payoutId: string, reason: string) => {
 export const enableVendorStripeAccount = async (userId: string) => {
   const vendor = await Vendor.findOne({ user: userId });
   if (!vendor) throw new AppError("Vendor not found", 404);
+
   let stripeAccount;
 
-  // 🟢 CASE 1: Account already exists
+  // CASE 1: Account already exists
   if (vendor.stripeAccountId) {
     stripeAccount = await stripe.accounts.retrieve(vendor.stripeAccountId);
 
-    // ✅ If already fully onboarded
+    // ✅ Fully onboarded
     if (stripeAccount.details_submitted && stripeAccount.payouts_enabled) {
       vendor.stripeOnboarded = true;
       vendor.payoutsEnabled = true;
       await vendor.save();
 
+      // create login link only for completed accounts
+      const loginLink = await stripe.accounts.createLoginLink(
+        vendor.stripeAccountId,
+      );
+
       return {
-        message: "Stripe account already fully onboarded.",
         completed: true,
+        url: loginLink.url,
+        message: "Stripe account already onboarded",
       };
     }
 
-    // ❗ Not completed → create fresh onboarding link
-  }
-
-  // 🔵 CASE 2: No Stripe account yet → create one
-  if (!vendor.stripeAccountId) {
-    stripeAccount = await stripe.accounts.create({
-      type: "express",
-      country: "US",
-      email: vendor.email,
-      capabilities: {
-        transfers: { requested: true },
-      },
-      metadata: {
-        vendorId: vendor._id.toString(),
-      },
+    // ❗ Account exists but onboarding incomplete
+    const accountLink = await stripe.accountLinks.create({
+      account: vendor.stripeAccountId,
+      refresh_url: `${process.env.FRONTEND_URL}/vendor/stripe/refresh`,
+      return_url: `${process.env.FRONTEND_URL}/vendor/stripe/success`,
+      type: "account_onboarding",
     });
 
-    vendor.stripeAccountId = stripeAccount.id;
-    vendor.stripeOnboarded = false;
-    vendor.payoutsEnabled = false;
-    await vendor.save();
+    return {
+      completed: false,
+      url: accountLink.url,
+      message: "Complete Stripe onboarding",
+    };
   }
-  // 🔁 Create onboarding link (resume flow)
-  // const accountLink = await stripe.accountLinks.create({
-  //   account: vendor.stripeAccountId,
-  //   refresh_url: `${process.env.FRONTEND_URL}/vendor/stripe/refresh`,
-  //   return_url: `${process.env.FRONTEND_URL}/vendor/stripe/success`,
-  //   type: "account_onboarding",
-  // });
-  const loginLink = await stripe.accounts.createLoginLink(
-    vendor.stripeAccountId,
-  );
+
+  // CASE 2: No Stripe account → create one
+  stripeAccount = await stripe.accounts.create({
+    type: "express",
+    country: "US",
+    email: vendor.email,
+    capabilities: {
+      transfers: { requested: true },
+    },
+    metadata: {
+      vendorId: vendor._id.toString(),
+    },
+  });
+
+  vendor.stripeAccountId = stripeAccount.id;
+  vendor.stripeOnboarded = false;
+  vendor.payoutsEnabled = false;
+  await vendor.save();
+
+  // Create onboarding link
+  const accountLink = await stripe.accountLinks.create({
+    account: stripeAccount.id,
+    refresh_url: `${process.env.FRONTEND_URL}/vendor/stripe/refresh`,
+    return_url: `${process.env.FRONTEND_URL}/vendor/stripe/success`,
+    type: "account_onboarding",
+  });
 
   return {
-    url: loginLink,
     completed: false,
+    url: accountLink.url,
+    message: "Stripe account created. Complete onboarding.",
   };
 };
 
@@ -258,9 +276,11 @@ export const payoutVendor = async (userId: string, payoutId: string) => {
 
   const wallet = await VendorWallet.findOne({ vendor: vendor._id });
   if (!wallet) throw new AppError("Vendor wallet not found", 404);
-  if (wallet.balance < payout.amount) throw new AppError("Insufficient wallet balance", 400);
+  if (wallet.balance < payout.amount)
+    throw new AppError("Insufficient wallet balance", 400);
 
-  if (!vendor.stripeAccountId) throw new AppError("Stripe account not connected", 403);
+  if (!vendor.stripeAccountId)
+    throw new AppError("Stripe account not connected", 403);
 
   const stripeAccount = await stripe.accounts.retrieve(vendor.stripeAccountId);
   if (!stripeAccount.payouts_enabled)
