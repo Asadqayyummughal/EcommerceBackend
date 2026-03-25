@@ -36,6 +36,7 @@ export const checkoutOrder = async (
     paymentMethod: "cod" | "stripe" | "paypal";
     shippingAddress: any;
     couponCode: string;
+    affiliateCode?: string;
   },
 ) => {
   const session = await mongoose.startSession();
@@ -113,6 +114,9 @@ export const checkoutOrder = async (
                 code: coupon.code,
                 discountAmount,
               }
+            : undefined,
+          affiliateCode: payload.affiliateCode
+            ? payload.affiliateCode.toUpperCase()
             : undefined,
         },
       ],
@@ -224,6 +228,13 @@ export const cancelOrder = async (userId: string, orderId: string) => {
     await order.save({ session });
     await session.commitTransaction();
     session.endSession();
+    // Reverse affiliate conversion if applicable
+    if (order.affiliateCode) {
+      appEventEmitter.emit("affiliate.conversion.reversed", {
+        orderId: order._id.toString(),
+        reason: "Order cancelled by user",
+      });
+    }
     return order;
   } catch (error) {
     await session.abortTransaction();
@@ -274,11 +285,15 @@ export const updateOrderStatus = async (
     // Save the order FIRST → persist status change
     await order.save({ session });
     // Now safe to emit event and credit wallet (order is persisted)
-    appEventEmitter.emit("order.status.changed", {
-      orderId,
-      newStatus,
-      userId,
-    });
+    appEventEmitter.emit("order.status.changed", { orderId, newStatus, userId });
+
+    // Reverse affiliate conversion on terminal failure states
+    if (restoreStates.includes(newStatus) && order.affiliateCode) {
+      appEventEmitter.emit("affiliate.conversion.reversed", {
+        orderId,
+        reason: `Order status changed to ${newStatus}`,
+      });
+    }
 
     if (newStatus === "delivered") {
       // ← use newStatus, not order.status (more predictable)

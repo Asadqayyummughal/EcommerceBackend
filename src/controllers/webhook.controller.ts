@@ -39,10 +39,15 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         let userId = order.user;
         await finalizeStock(order);
         await order.save({ session });
-        appEventEmitter.emit("order.placed", {
-          orderId,
-          userId,
-        });
+        appEventEmitter.emit("order.placed", { orderId, userId });
+        if (order.affiliateCode) {
+          appEventEmitter.emit("affiliate.conversion.created", {
+            orderId: orderId.toString(),
+            userId: userId.toString(),
+            affiliateCode: order.affiliateCode,
+            orderAmount: order.totalAmount,
+          });
+        }
       }
     }
     if (event.type === "payment_intent.payment_failed") {

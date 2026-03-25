@@ -63,6 +63,7 @@ export interface IOrder extends Document {
   shipment: IShipment;
   orderEvents: IOrderEvent[];
   coupon: ICoupon;
+  affiliateCode?: string;
 }
 
 const OrderSchema = new Schema<IOrder>(
@@ -131,6 +132,7 @@ const OrderSchema = new Schema<IOrder>(
       code: String,
       discountAmount: Number,
     },
+    affiliateCode: { type: String, uppercase: true, trim: true },
   },
   { timestamps: true },
 );
