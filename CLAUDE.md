@@ -30,6 +30,7 @@ src/
 ├── middlewares/       # Auth, role, vendor, multer, validate
 ├── admin/             # Admin-specific controllers/routes/services
 ├── vendor/            # Vendor-specific controllers/routes/services
+├── affiliate/         # Affiliate system (controllers, routes, services)
 ├── events/            # EventEmitter system + listeners
 ├── cron-jobs/         # node-cron scheduled tasks
 ├── validators/        # Joi validation schemas
@@ -51,7 +52,7 @@ src/
 
 **Stripe webhooks** (`src/controllers/webhook.controller.ts`) handle: `payment_intent.succeeded/failed`, `account.updated` (vendor onboarding), `transfer.created/reversed` (vendor payouts). The `/api/webhook` route bypasses body-parser JSON and uses raw body for signature verification.
 
-**Event system:** `src/events/appEvents.ts` is a singleton EventEmitter. Events: `order.created`, `order.status.changed`, `vendor.account.status`. Listeners in `src/events/listeners/` handle side effects (emails, notifications).
+**Event system:** `src/events/appEvents.ts` is a singleton EventEmitter. Events: `order.created`, `order.status.changed`, `vendor.account.status`, `affiliate.conversion.created`, `affiliate.conversion.approved`, `affiliate.conversion.reversed`. Listeners in `src/events/listeners/` handle side effects (emails, notifications, affiliate commissions).
 
 **Real-time notifications:** Socket.io with per-user rooms (user joins room by userId on `join` event). `sendRealtimeNotification(userId, payload)` and `sendGlobalNotification(payload)` in `src/utils/notifications.ts`.
 
@@ -98,7 +99,123 @@ FRONTEND_URL=http://localhost:4200/
 | `/api/review` | Product reviews |
 | `/api/wishlist` | Wishlists |
 | `/api/vendor` | Vendor profiles + store + products |
+| `/api/affiliate` | Affiliate apply, track clicks, conversions, payouts |
+| `/api/admin/affiliates` | Admin: manage affiliates, payouts, program settings |
 | `/api/admin/*` | Admin dashboard, coupons, shipments, roles, permissions, users, notifications |
+
+## Affiliate System
+
+**Location:** `src/affiliate/` (controllers, routes, services) + `src/models/affiliate*.model.ts`
+
+### Models
+
+| Model | File | Purpose |
+|-------|------|---------|
+| `Affiliate` | `affiliate.model.ts` | Affiliate profile — code, status, tier, balances |
+| `AffiliateProgram` | `affiliate-program.model.ts` | Singleton program config (rates, tiers, cookie days) |
+| `AffiliateClick` | `affiliate-click.model.ts` | Click tracking with 90-day TTL index |
+| `AffiliateConversion` | `affiliate-conversion.model.ts` | Conversion ledger (pending→approved→paid→reversed) |
+| `AffiliatePayout` | `affiliate-payout.model.ts` | Payout requests (requested→approved→paid) |
+
+### Tier System (default)
+| Tier | Min Conversions | Commission |
+|------|-----------------|------------|
+| Bronze | 0 | 5% |
+| Silver | 10 | 7% |
+| Gold | 50 | 10% |
+| Platinum | 100 | 15% |
+
+Tier + rate are recalculated after each approved conversion via `recalculateTier()`.
+
+### Conversion Lifecycle
+```
+Payment succeeds (Stripe webhook)
+    → affiliate.conversion.created event
+    → AffiliateConversion created (status: "pending")
+    → affiliate.lockedBalance += commissionAmount
+
+Order status → "delivered"
+    → order.status.changed event (listener checks newStatus === "delivered")
+    → AffiliateConversion → "approved"
+    → affiliate.lockedBalance -= commissionAmount
+    → affiliate.balance += commissionAmount
+    → affiliate.totalEarned += commissionAmount
+    → recalculateTier()
+
+Order cancelled / failed / expired
+    → affiliate.conversion.reversed event
+    → AffiliateConversion → "reversed"
+    → Reverses the balance change (locked or approved)
+```
+
+### Self-referral Prevention
+`createConversion()` checks `affiliate.user === order.user` and skips if true.
+
+### Order Integration
+- `POST /api/order/checkout` accepts optional `affiliateCode` in body
+- Frontend reads `aff_code` from cookie (set by tracking endpoint) and forwards it
+- Stored on the Order document as `affiliateCode` (uppercase)
+- Webhook reads `order.affiliateCode` and emits `affiliate.conversion.created`
+
+### Click Tracking
+`GET /api/affiliate/track/:code?product=<productId>` records a click and returns:
+```json
+{ "affiliateCode": "JOHN1234", "clickId": "...", "cookieDurationDays": 30 }
+```
+Frontend sets `aff_code` cookie (30 days). AffiliateClick records have a 90-day MongoDB TTL.
+
+### Payout Flow (Affiliate)
+```
+affiliate.balance >= minPayoutAmount ($50 default)
+    → POST /api/affiliate/payouts/request { amount, method, payoutDetails }
+    → balance -= amount, lockedBalance += amount
+    → AffiliatePayout created (status: "requested")
+
+Admin approves → PUT /api/admin/affiliates/payouts/:id/approve
+Admin marks paid → PUT /api/admin/affiliates/payouts/:id/paid
+    → lockedBalance -= amount, totalPaidOut += amount
+
+Admin rejects → PUT /api/admin/affiliates/payouts/:id/reject
+    → balance restored, lockedBalance -= amount
+```
+
+### API Endpoints
+
+**Affiliate (user-facing) — `/api/affiliate`**
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/track/:code` | — | Record click, return cookie info |
+| GET | `/program` | — | Get program settings (tiers, rates) |
+| POST | `/apply` | JWT | Apply to become affiliate |
+| GET | `/me` | JWT | Own affiliate profile |
+| GET | `/stats` | JWT | Conversion stats by status |
+| GET | `/conversions` | JWT | Paginated conversion list |
+| GET | `/payouts` | JWT | Paginated payout history |
+| POST | `/payouts/request` | JWT | Request a payout |
+
+**Admin — `/api/admin/affiliates`**
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | List all affiliates (filter by status) |
+| GET | `/analytics` | Platform-wide affiliate analytics |
+| PUT | `/:id/status` | Approve / reject / suspend affiliate |
+| GET | `/:id/conversions` | View affiliate's conversions |
+| GET | `/payouts` | List all payout requests |
+| PUT | `/payouts/:id/approve` | Approve a payout |
+| PUT | `/payouts/:id/paid` | Mark payout as paid |
+| PUT | `/payouts/:id/reject` | Reject + restore balance |
+
+**Program Settings — `/api/admin/affiliate-program`** (in affiliate-admin routes)
+
+### Key Implementation Notes
+- Commission is calculated on `order.totalAmount` (after coupon discount)
+- Commissions are held in `lockedBalance` until the order is delivered — protects against refund fraud
+- `AffiliateProgram` is a singleton document — seeded with defaults on first access
+- Tier recalculation is non-transactional (best-effort after commit)
+- All balance operations use MongoDB sessions for atomicity
+- `AffiliateClick` documents auto-expire after 90 days (MongoDB TTL index)
+
+---
 
 ## Vendor Dashboard UI Plan
 

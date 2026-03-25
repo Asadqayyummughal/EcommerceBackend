@@ -20,5 +20,7 @@ export type AppEventsMap = {
   "order.created": { orderId: string; userId: string };
   "order.status.changed": { orderId: string; newStatus: string };
   "vendor.account.status": { vendorId: string; newStatus: string };
-  // add more events here
+  "affiliate.conversion.created": { orderId: string; userId: string; affiliateCode: string; orderAmount: number };
+  "affiliate.conversion.approved": { orderId: string };
+  "affiliate.conversion.reversed": { orderId: string; reason: string };
 };

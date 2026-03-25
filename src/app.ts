@@ -23,6 +23,8 @@ import vendorRoutes from "./vendor/routes/vendor.routes";
 import vendorProductRoutes from "./vendor/routes/vendor-product.routes";
 import vendorStoreRoutes from "./vendor/routes/store.routes";
 import notificatonRoutes from "./admin/routes/notification.routes";
+import affiliateRoutes from "./affiliate/routes/affiliate.routes";
+import affiliateAdminRoutes from "./affiliate/routes/affiliate-admin.routes";
 const app: Application = express();
 // webhook routes
 app.use("/api/webhook", webhookRoutes);
@@ -59,6 +61,8 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/vendor", vendorRoutes);
 app.use("/api/vendor/products", vendorProductRoutes);
 app.use("/api/vendor/store", vendorStoreRoutes);
+app.use("/api/affiliate", affiliateRoutes);
+app.use("/api/admin/affiliates", affiliateAdminRoutes);
 
 // Global error handler — must be last
 app.use(errorHandler);

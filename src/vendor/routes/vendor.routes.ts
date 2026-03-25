@@ -17,7 +17,7 @@ router.put(
   authMiddleware,
   isAdmin,
   vendorController.approveVendor,
-); // approveVenodor
+);
 router.post(
   "/payouts/request",
   authMiddleware,
