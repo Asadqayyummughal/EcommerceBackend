@@ -3,7 +3,7 @@ import * as categoryService from "../services/category.service";
 import { asyncHandler } from "../utils/asyncHandler";
 
 export const createCategory = asyncHandler(async (req: Request, res: Response) => {
-  const image = req.file ? req.file.path : null;
+  const image = req.file ? `uploads/categories/${req.file.filename}` : null;
   const category = await categoryService.createCategoryService({ ...req.body, image });
   res.status(201).json({ success: true, message: "Category created successfully", data: category });
 });
@@ -19,7 +19,7 @@ export const getCategory = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateCategory = asyncHandler(async (req: Request, res: Response) => {
-  const image = req.file ? req.file.path : null;
+  const image = req.file ? `uploads/categories/${req.file.filename}` : null;
   const updateData: any = { ...req.body };
   if (image) updateData.image = image;
   const updated = await categoryService.updateCategoryService(req.params.id, updateData);

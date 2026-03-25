@@ -3,7 +3,7 @@ import * as subCategoryService from "../services/subcatrgory.service";
 import { asyncHandler } from "../utils/asyncHandler";
 
 export const createSubCategory = asyncHandler(async (req: Request, res: Response) => {
-  const image = req.file ? req.file.path : null;
+  const image = req.file ? `uploads/categories/${req.file.filename}` : null;
   const sub = await subCategoryService.createSubCategoryService({ ...req.body, image });
   res.status(201).json({ success: true, message: "Subcategory created successfully", data: sub });
 });
@@ -19,7 +19,7 @@ export const getSubCategory = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const updateSubCategory = asyncHandler(async (req: Request, res: Response) => {
-  const image = req.file ? req.file.path : null;
+  const image = req.file ? `uploads/categories/${req.file.filename}` : null;
   const updateData: any = { ...req.body };
   if (image) updateData.image = image;
   const updated = await subCategoryService.updateSubCategoryService(req.params.id, updateData);
